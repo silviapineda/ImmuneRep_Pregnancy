@@ -37,8 +37,16 @@ directory <- "TCR/"
 
 load(paste(directory, 'TCR_data.RData', sep = ""))
 ##75% of v-scores are below 124, discarding all below 200 results in no leftover data
-##so keep all for now
-data_qc<-data[which(data$v_score>=0),]
+##Instead of filtering by v-score, filter by num_mismatches / length
+
+mismatch_threshold <- 0.99
+mask <- ((nchar(as.character(data$v_sequence)) -
+         lengths(regmatches(data$v_sequence,
+                            gregexpr("[A-Z]",
+                                     data$v_sequence))))/
+           nchar(as.character(data$v_sequence))) > mismatch_threshold
+
+data_qc<-data[mask,]
 ##Discard the non-functional sequences
 data_qc<-data_qc[which(data_qc$productive=="t"),]
 
