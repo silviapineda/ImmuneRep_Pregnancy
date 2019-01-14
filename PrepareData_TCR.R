@@ -137,5 +137,5 @@ diversity<-cbind(clonality,entropy,simpson)
 
 summary_data<-cbind(summary_data,diversity)
 
-save(data_qc,summary_data,file=paste(directory, "TCR_data_summary.RData", split = ""))
+save(data_qc,summary_data,file=paste(directory, "TCR_data_summary.RData", sep = ""))
 
