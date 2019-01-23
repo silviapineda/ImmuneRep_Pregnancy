@@ -39,12 +39,6 @@ barplot(summary_data$clones,col=COLOR[summary_data$sample],
 legend("topright", legend=levels(summary_data$sample),col=COLOR[factor(summary_data$sample)],pch=15, cex=0.8)
 dev.off()
 
-tiff(paste(plot_directory, "barplot_SHM.tiff", sep = ""),res=300,w=4000,h=2000)
-barplot(summary_data$SHM,col=COLOR[summary_data$sample],
-        names.arg = summary_data$pairs,main="SHM",xlab = "Samples", ylab = "SHM",las=2)
-legend("topright", legend=levels(summary_data$sample),col=COLOR[factor(summary_data$sample)],pch=15, cex=0.8)
-dev.off()
-
 tiff(paste(plot_directory, "barplot_cdr3length.tiff", sep = ""),res=300,w=4000,h=2000)
 barplot(summary_data$mean_CDR3_length,col=COLOR[summary_data$sample],
         names.arg = summary_data$pairs,main="mean_CDR3_length",xlab = "Samples", ylab = "mean_CDR3_length",las=2)
