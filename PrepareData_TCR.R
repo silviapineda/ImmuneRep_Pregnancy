@@ -51,9 +51,13 @@ data_qc<-data[mask,]
 data_qc<-data_qc[which(data_qc$productive=="t"),]
 
 ##Extract the gene from the segment with the allele
-data_qc$v_gene <- gsub("\\*", "", substr(data_qc$v_segment, 1, 8))
-data_qc$j_gene <- gsub("\\*", "", substr(data_qc$j_segment, 1, 5))
-data_qc$d_gene <- gsub("\\*", "", substr(data_qc$d_segment, 1, 8))
+#v_segment is variable in length: 8, 9, 10, 11, or 15 characters
+#j_segment is empty or 8 characters ending with *01 (discard that segment)
+#d_segment is empty or 10 characters ending with *0x
+#in all cases, keep gene abbreviation appearing prior to *
+data_qc$v_gene <- gsub("\\*.*$", "", data_qc$v_segment)
+data_qc$j_gene <- gsub("\\*.*$", "", data_qc$j_segment)
+data_qc$d_gene <- gsub("\\*.*$", "", data_qc$d_segment)
 
 ###Extract the CDR3 region
 data_qc$cdr3_seq <- gsub(" ","", data_qc$cdr3_seq_nt_q)

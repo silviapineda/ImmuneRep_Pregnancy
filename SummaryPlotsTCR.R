@@ -35,7 +35,7 @@ dev.off()
 
 tiff(paste(plot_directory, "barplot_clones.tiff", sep = ""),res=300,w=4000,h=2000)
 barplot(summary_data$clones,col=COLOR[summary_data$sample],
-        names.arg = summary_data$pairs,main="Number of Clones",xlab = "Samples", ylab = "Clones",las=2)
+        names.arg = summary_data$pairs,main="clones_TCR",xlab = "Samples", ylab = "clones_TCR",las=2)
 legend("topright", legend=levels(summary_data$sample),col=COLOR[factor(summary_data$sample)],pch=15, cex=0.8)
 dev.off()
 
@@ -47,7 +47,7 @@ dev.off()
 
 tiff(paste(plot_directory, "entropy.tiff", sep = ""),res=300,w=4000,h=2000)
 barplot(summary_data$entropy,col=COLOR[summary_data$sample],
-        names.arg = summary_data$pairs,main="entropy",xlab = "Samples", ylab = "entropy",las=2)
+        names.arg = summary_data$pairs,main="entropy_TCR",xlab = "Samples", ylab = "entropy_TCR",las=2)
 legend("topright", legend=levels(summary_data$sample),col=COLOR[factor(summary_data$sample)],pch=15, cex=0.8)
 dev.off()
 
