@@ -114,7 +114,7 @@ colnames(reads_clones_igh_SHM_cdr3length)[20:25]<-c("CDR3_length_unmapped","CDR3
 #
 
 ### Add naive and memory B-cells clones from the IGHM isotype
-## SHM<=4 is navie SHM>=4 is memory
+## SHM<=4 is navie SHM>4 is memory
 data_qc$IGHM_naive_memory<-ifelse(data_qc$isotype=="IGHM" & data_qc$SHM<=4,"naive",
                                   ifelse(data_qc$isotype=="IGHM" & data_qc$SHM>4,"memory",NA))
 
@@ -210,4 +210,6 @@ rownames(diversity)<-sample
 summary_data<-cbind(summary_data,diversity)
 
 save(data_qc,summary_data,file="Data/BCR_data_summary.RData")
+
+
 
