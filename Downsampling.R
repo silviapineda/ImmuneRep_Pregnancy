@@ -26,10 +26,6 @@ setwd("/Users/Pinedasans/ImmuneRep_Pregnancy/")
 load("Data/BCR/BCR_data_summary.RData")
 
 
-##After running the clonal called using the python script
-ClonesInfered_downsampled<-read.csv("Data/BCR/ClonesInfered_downsampled.csv")
-
-
 ###Minimum number of reads to do downsampling
 min_reads<-min(summary_data$read_count) #291635
 ##Down-sampling to 291635 reads
@@ -45,16 +41,19 @@ for (b in 1:10){
   }
   save(data_qc_downsampled,file=paste0("Data/BCR/data_downsampled_",b,".Rdata"))
   
-  ###Prepare the data for the python script using python3
+  
+    
+}
+
+###Prepare the data for the python script using python3
+for (i in 1:10){
+  load(paste0("Data/BCR/data_downsampled_",i,".Rdata"))
   data_qc_downsampled$V_J_lenghCDR3 = paste(data_qc_downsampled$v_gene, data_qc_downsampled$j_gene, nchar(data_qc_downsampled$cdr3_seq),sep="_")
   data_qc_downsampled$unique_id<-seq(1,nrow(data_qc_downsampled))
-  data_clonesInference<-data_qc_downsampled[,c("unique_id","sample_label","isotype","IGHM_naive_memory","v_segment","d_segment",
-                                               "j_segment","trimmed_sequence","v_sequence","d_sequence","j_sequence","igh_clone_id",
-                                               "cdr3_seq_aa_q","v_gene","j_gene","d_gene","Vlength", "SHM",  "SHM_freq", "CDR3_length","V_J_lenghCDR3","cdr3_seq")]
-  data_clonesInference<-data_clonesInference[which(nchar(data_qc_downsampled$cdr3_seq)!=0),]
+  data_clonesInference<-data_qc_downsampled[,c("unique_id","sample_label","cdr3_seq","CDR3_length","v_gene","j_gene","V_J_lenghCDR3")]
   write.table(data_clonesInference,file=paste0("Data/BCR/data_clonesInference_down",i,".txt"),row.names = F,sep="\t")
-  
-}
+}  
+
 
 for (i in 1:10){
   ClonesInfered_downsampled<-read.csv(paste0("Data/BCR/ClonesInfered_down",i,".csv"))
