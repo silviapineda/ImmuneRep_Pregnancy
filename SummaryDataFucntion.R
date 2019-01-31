@@ -25,7 +25,8 @@ summaryData<-function(data_qc){
   reads <- cbind(read_count,read_count_isotype)
 
   ##Count number of clones per sample 
-  data_qc$V_J_lenghCDR3_Clone_igh = paste(data_qc$v_gene, data_qc$j_gene, nchar(data_qc$cdr3_seq),data_qc$igh_clone_id,sep="_")
+  data_qc$cdr3_seq<-as.character(data_qc$cdr3_seq)
+  data_qc$V_J_lenghCDR3_Clone_igh = paste(data_qc$v_gene, data_qc$j_gene, nchar(data_qc$cdr3_seq),data_qc$numberClon,sep="_")
   read_count_ighClones<- unique(data_qc[,c("sample_label","V_J_lenghCDR3_Clone_igh","isotype")])
   clones_igh<-data.matrix(table(read_count_ighClones$sample_label,read_count_ighClones$isotype))
   colnames(clones_igh)<-c("clones_unmapped","clones_IGHA","clones_IGHD","clones_IGHE","clones_IGHG","clones_IGHM")
