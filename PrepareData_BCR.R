@@ -31,7 +31,7 @@ save(data, file="Data/BCR_data.RData")
 ##############################
 ###Some Quality Control
 #############################
-load("Data/BCR_data.RData")
+load("Data/BCR/BCR_data.RData")
 ##Discard all the V_score < 200
 data_qc<-data[which(data$v_score>=200),]
 ##Discard the non-functional sequences
@@ -114,7 +114,7 @@ colnames(reads_clones_igh_SHM_cdr3length)[20:25]<-c("CDR3_length_unmapped","CDR3
 #
 
 ### Add naive and memory B-cells clones from the IGHM isotype
-## SHM<=4 is navie SHM>=4 is memory
+## SHM<=4 is navie SHM>4 is memory
 data_qc$IGHM_naive_memory<-ifelse(data_qc$isotype=="IGHM" & data_qc$SHM<=4,"naive",
                                   ifelse(data_qc$isotype=="IGHM" & data_qc$SHM>4,"memory",NA))
 
@@ -201,13 +201,22 @@ for (i in 1:length(sample)){
   
 }
 
-#entropy_norm<-entropy/max(entropy,na.rm = T)
-#clonality<-(1-entropy_norm)
-#names(clonality)<-specimen_unique
+entropy_norm_IGHA<-entropy_IGHA/max(entropy_IGHA,na.rm = T)
+clonality_IGHA<-(1-entropy_norm_IGHA)
+entropy_norm_IGHD<-entropy_IGHD/max(entropy_IGHD,na.rm = T)
+clonality_IGHD<-(1-entropy_norm_IGHD)
+entropy_norm_IGHG<-entropy_IGHG/max(entropy_IGHG,na.rm = T)
+clonality_IGHG<-(1-entropy_norm_IGHG)
+entropy_norm_IGHM<-entropy_IGHM/max(entropy_IGHM,na.rm = T)
+clonality_IGHM<-(1-entropy_norm_IGHM)
+entropy_norm_memory<-entropy_memory/max(entropy_memory,na.rm = T)
+clonality_memory<-(1-entropy_norm_memory)
+entropy_norm_naive<-entropy_naive/max(entropy_naive,na.rm = T)
+clonality_naive<-(1-entropy_norm_naive)
 
-diversity<-cbind(entropy_unmapped,entropy_IGHA,entropy_IGHD,entropy_IGHE,entropy_IGHG,entropy_IGHM,entropy_naive,entropy_memory)
+diversity<-cbind(entropy_unmapped,entropy_IGHA,entropy_IGHD,entropy_IGHE,entropy_IGHG,entropy_IGHM,entropy_naive,entropy_memory,
+                 clonality_IGHA,clonality_IGHD,clonality_IGHG,clonality_IGHM,clonality_memory,clonality_naive)
 rownames(diversity)<-sample
 summary_data<-cbind(summary_data,diversity)
 
 save(data_qc,summary_data,file="Data/BCR_data_summary.RData")
-
