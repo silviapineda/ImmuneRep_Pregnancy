@@ -55,10 +55,16 @@ for (i in 1:10){
 }  
 
 
+###Read the data from the python script and prepare the summary matrix
 for (i in 1:10){
   ClonesInfered_downsampled<-read.csv(paste0("Data/BCR/ClonesInfered_down",i,".csv"))
+  load(paste0("Data/BCR/data_downsampled_",i,".Rdata"))
+  id<-match(ClonesInfered_downsampled$unique_id,data_qc_downsampled$unique_id)
+  ClonesInfered_downsampled$isotype<-data_qc_downsampled$isotype[id]
+  ClonesInfered_downsampled$SHM_freq<-data_qc_downsampled$SHM_freq[id]
+  ClonesInfered_downsampled$SHM<-data_qc_downsampled$SHM[id]
   assign(paste0("summary_data_down",i),summaryData(ClonesInfered_downsampled))
-  }
+}
 
 
 ####Mean Clones
@@ -114,14 +120,13 @@ save(summary_data_down,file="Data/BCR/BCR_data_summary_down.RData")
 ###Statistical Analysis on the downsampling
 #####
 load("Data/BCR/BCR_data_summary_down.RData")
-COLOR=c("#BEAED4","#7FC97F")
 
 ###Function to plot summary plots with bar plots
 ####Summary plots
 brewer.pal(n = 3, name = "Accent")
 COLOR=c("#BEAED4","#7FC97F")
 
-summary_data_down<-summary_data[order(summary_data$sample),]
+summary_data_down<-summary_data_down1[order(summary_data_down1$sample),]
 for (i in c("clones_IGHA","clones_IGHD","clones_IGHE","clones_IGHG","clones_IGHM","clones_memory","clones_naive")){
   print(i)
   tiff(paste0("Results/boxplot_",i,".tiff"),res=300,w=1500,h=2000)
@@ -158,4 +163,5 @@ for (i in c("SHM_IGHA","SHM_IGHD","SHM_IGHE","SHM_IGHG","SHM_IGHM")){
   print(g)
   dev.off()
 }
+
 
