@@ -1,6 +1,4 @@
-rm(list = ls(all = TRUE))
-x<-date()
-print(x)
+
 ###########################################################################################
 ### PROJECT: Immune Repertoire. Analysis B cells antibodies for pregnancy
 ###
@@ -161,11 +159,22 @@ summaryData<-function(data_qc){
   
   }
 
-  #entropy_norm<-entropy/max(entropy,na.rm = T)
-  #clonality<-(1-entropy_norm)
-  #names(clonality)<-specimen_unique
+  entropy_norm_IGHA<-entropy_IGHA/max(entropy_IGHA,na.rm = T)
+  clonality_IGHA<-(1-entropy_norm_IGHA)
+  entropy_norm_IGHD<-entropy_IGHD/max(entropy_IGHD,na.rm = T)
+  clonality_IGHD<-(1-entropy_norm_IGHD)
+  entropy_norm_IGHG<-entropy_IGHG/max(entropy_IGHG,na.rm = T)
+  clonality_IGHG<-(1-entropy_norm_IGHG)
+  entropy_norm_IGHM<-entropy_IGHM/max(entropy_IGHM,na.rm = T)
+  clonality_IGHM<-(1-entropy_norm_IGHM)
+  entropy_norm_memory<-entropy_memory/max(entropy_memory,na.rm = T)
+  clonality_memory<-(1-entropy_norm_memory)
+  entropy_norm_naive<-entropy_naive/max(entropy_naive,na.rm = T)
+  clonality_naive<-(1-entropy_norm_naive)
+  
+  diversity<-cbind(entropy_unmapped,entropy_IGHA,entropy_IGHD,entropy_IGHE,entropy_IGHG,entropy_IGHM,entropy_naive,entropy_memory,
+                   clonality_IGHA,clonality_IGHD,clonality_IGHG,clonality_IGHM,clonality_memory,clonality_naive)
 
-  diversity<-cbind(entropy_unmapped,entropy_IGHA,entropy_IGHD,entropy_IGHE,entropy_IGHG,entropy_IGHM,entropy_naive,entropy_memory)
   rownames(diversity)<-sample
   summary_data<-cbind(summary_data,diversity)
   
