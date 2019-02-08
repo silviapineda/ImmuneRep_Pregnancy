@@ -61,7 +61,7 @@ network_naive<-Obtain_vertex_edges(data_qc,"naive")
 ##3.Plot the network
 sample<-unique(data_qc$sample_label)
 
-isotype="naive"
+isotype="IGHM"
 
 ##Mother
 sample_M<-sample[which(summary_data$sample=="Mother")] 
