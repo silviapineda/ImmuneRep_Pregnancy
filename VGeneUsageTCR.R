@@ -45,8 +45,8 @@ v_gene_percents<-data.frame(apply(v_gene_counts, 2, function(x) prop.table(x)))
 #        names.arg = rownames(v_gene_percents),main="",xlab = "V-Gene", ylab = "%",las=2)
 
 ##Look at v_gene percentage distribution for just mothers and for just babies
-mothers<-summary_data[summary_data$sample == "Mother", "pairs"]
-fetuses<-summary_data[summary_data$sample == "Fetus", "pairs"]
+mothers<-summary_data[summary_data$sample == "Maternal", "pairs"]
+fetuses<-summary_data[summary_data$sample == "Fetal", "pairs"]
 
 
 COLOR<-brewer.pal(n = length(mothers), name = "Paired")
@@ -92,8 +92,8 @@ v_gene_percents_summary <- data.frame(means_mothers = means_mothers, stdev_mothe
                                       means_fetuses = means_fetuses, stdev_fetuses = stdev_fetuses)
 v_gene_percents_summary$gene <- rownames(v_gene_percents_summary)
 
-v_gene_percents_summary_2 <- rbind(data.frame(gene = names(means_mothers), group = "Mothers", mean = means_mothers, std = stdev_mothers),
-                                   data.frame(gene = names(means_fetuses), group = "Fetuses", mean = means_fetuses, std = stdev_fetuses))
+v_gene_percents_summary_2 <- rbind(data.frame(gene = names(means_mothers), group = "Maternal", mean = means_mothers, std = stdev_mothers),
+                                   data.frame(gene = names(means_fetuses), group = "Fetal", mean = means_fetuses, std = stdev_fetuses))
 
 ##unpaired t-test comparing gene distributions between mothers and fetuses
 #n1 = ncol(v_gene_percents_mothers)
@@ -176,8 +176,8 @@ data_qc$sample_label_level <- substr(data_qc$sample_label, 1, 1)
 
 v_gene_counts_level<-as.data.frame.matrix(table(data_qc$v_gene, data_qc$sample_label_level))
 v_gene_percents_level<-data.frame(apply(v_gene_counts_level, 2, function(x) prop.table(x)))
-colnames(v_gene_counts_level) <- c("Fetuses", "Mothers")
-colnames(v_gene_percents_level) <- c("Fetuses", "Mothers")
+colnames(v_gene_counts_level) <- c("Fetal", "Maternal")
+colnames(v_gene_percents_level) <- c("Fetal", "Maternal")
 
 COLOR=c("#BEAED4","#7FC97F")
 
@@ -208,7 +208,7 @@ for (i in 1:(length(sample_labels)/2)*2){
 
 
 my_sample_col <- data.frame(pair = gsub("[FMa]", "", colnames(v_gene_percents)),
-                            sample = ifelse(substr(colnames(v_gene_percents), 1, 1) == "F", "Fetus", "Mother"))
+                            sample = ifelse(substr(colnames(v_gene_percents), 1, 1) == "F", "Fetal", "Maternal"))
 rownames(my_sample_col) <- colnames(v_gene_percents)
 
 tiff(paste(plot_directory, "heatmap.tiff", sep = ""),res=300,w=2000,h=2000)
@@ -225,6 +225,23 @@ pheatmap(v_gene_percents[sig_genes,], annotation_col = my_sample_col,
 dev.off()
 
 
+#heatmap, exclude genes with consistent low usage (mean: 0.005)
+tiff(paste(plot_directory, "heatmap_usage_cutoff.tiff", sep = ""),res=300,w=2000,h=2000)
+p <- pheatmap(v_gene_percents[(rowSums(v_gene_percents)/ncol(v_gene_percents)) > 0.005,], annotation_col = my_sample_col,
+              color = rev(colorRampPalette(rev(brewer.pal(n = 7, name = "YlOrRd")))(100)),
+              main = paste("Heatmap of Genes/Samples - TCR"), fontsize = 8, fontsize_row = 6)
+print(p)
+dev.off()
+
+##correlatin matrix heatmap
+tiff(paste(plot_directory, "heatmap_correlation.tiff", sep = ""),res=300,w=2000,h=2000)
+p <- pheatmap(cor(v_gene_percents), annotation_col = my_sample_col,
+              color = rev(colorRampPalette(rev(brewer.pal(n = 7, name = "YlOrRd")))(100)),
+              main = paste("Sample Correlation - TCR"), fontsize = 8, fontsize_row = 6)
+#corrplot.mixed(cor(v_gene_percents), lower = "number", upper = "shade", order = "hclust", hclust.method = "ward.D2", addrect = 2, 
+#         tl.col = "black", tl.srt = 45)
+print(p)
+dev.off()
 
 ##v-gene family
 
@@ -237,8 +254,8 @@ v_family_counts <- v_family_counts[,colSums(v_family_counts) >= 1000]
 v_family_percents<-data.frame(apply(v_family_counts, 2, function(x) prop.table(x)))
 
 ##Look at v_gene percentage distribution for just mothers and for just babies
-mothers<-summary_data[summary_data$sample == "Mother", "pairs"]
-fetuses<-summary_data[summary_data$sample == "Fetus", "pairs"]
+mothers<-summary_data[summary_data$sample == "Maternal", "pairs"]
+fetuses<-summary_data[summary_data$sample == "Fetal", "pairs"]
 COLOR<-brewer.pal(n = length(mothers), name = "Paired")
 
 ##Calculate v_gene counts and percents from reads for POOLED mothers/fetuses
@@ -259,8 +276,8 @@ v_family_percents_summary <- data.frame(means_mothers = means_mothers, stdev_mot
                                       means_fetuses = means_fetuses, stdev_fetuses = stdev_fetuses)
 v_family_percents_summary$gene <- rownames(v_family_percents_summary)
 
-v_family_percents_summary_2 <- rbind(data.frame(gene = names(means_mothers), group = "Mothers", mean = means_mothers, std = stdev_mothers),
-                                     data.frame(gene = names(means_fetuses), group = "Fetuses", mean = means_fetuses, std = stdev_fetuses))
+v_family_percents_summary_2 <- rbind(data.frame(gene = names(means_mothers), group = "Maternal", mean = means_mothers, std = stdev_mothers),
+                                     data.frame(gene = names(means_fetuses), group = "Fetal", mean = means_fetuses, std = stdev_fetuses))
 
 
 for (gene in rownames(v_family_percents)){
@@ -331,7 +348,7 @@ dev.off()
 
 #heatmaps
 my_sample_col <- data.frame(pair = gsub("[FMa]", "", colnames(v_family_percents)),
-                            sample = ifelse(substr(colnames(v_family_percents), 1, 1) == "F", "Fetus", "Mother"))
+                            sample = ifelse(substr(colnames(v_family_percents), 1, 1) == "F", "Fetal", "Maternal"))
 rownames(my_sample_col) <- colnames(v_family_percents)
 
 tiff(paste(plot_directory, "heatmap_family.tiff", sep = ""),res=300,w=2000,h=2000)
@@ -340,9 +357,11 @@ pheatmap(v_family_percents, annotation_col = my_sample_col,
          main = "Heatmap of Genes/Samples - TCR", fontsize = 8, fontsize_row = 6)
 dev.off()
 
+
 ##heatmaps of just significant genes
 tiff(paste(plot_directory, "heatmap_family_sig_genes.tiff", sep = ""),res=300,w=2000,h=2000)
 pheatmap(v_family_percents[sig_genes,], annotation_col = my_sample_col,
          color = rev(colorRampPalette(rev(brewer.pal(n = 7, name = "YlOrRd")))(100)),
          main = "Heatmap of Significant Genes - TCR", fontsize = 8, fontsize_row = 6)
 dev.off()
+
