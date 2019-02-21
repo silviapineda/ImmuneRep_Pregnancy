@@ -24,7 +24,7 @@ load("Data/BCR/BCR_data_summary.RData")
 ###################################################
 ## Common clones across mother and Fetus (BCR) ##
 #################################################
-isotype="IGHM"
+isotype="IGHD"
 
 ############
 ## 1. Build the matrix with the clones by samples
