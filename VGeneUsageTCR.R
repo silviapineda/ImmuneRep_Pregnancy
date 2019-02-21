@@ -45,8 +45,8 @@ v_gene_percents<-data.frame(apply(v_gene_counts, 2, function(x) prop.table(x)))
 #        names.arg = rownames(v_gene_percents),main="",xlab = "V-Gene", ylab = "%",las=2)
 
 ##Look at v_gene percentage distribution for just mothers and for just babies
-mothers<-summary_data[summary_data$sample == "Maternal", "pairs"]
-fetuses<-summary_data[summary_data$sample == "Fetal", "pairs"]
+mothers<-summary_data[summary_data$sample == "Mother", "pairs"]
+fetuses<-summary_data[summary_data$sample == "Fetus", "pairs"]
 
 
 COLOR<-brewer.pal(n = length(mothers), name = "Paired")
@@ -170,6 +170,30 @@ ggplot(v_gene_percents_summary_2_sig, aes(x = gene, y = mean, fill = group)) +
   scale_fill_manual(values = COLOR, name = "")
 dev.off()
 
+#load in ordering on 7q34 chromosome for TRB genes, order barplot by ordering
+filepath = "TRB_gene_order.csv"
+v_gene_order = read.csv(filepath)
+colnames(v_gene_order)[1] <- "gene"
+
+#append gene_order from imgt to dataframe
+v_gene_percents_summary_2 <- merge(v_gene_percents_summary_2, v_gene_order[,c("gene", "gene_order")],
+                                   all.x = TRUE, all.y = FALSE)
+
+##plotting by ordering the v genes by chromosome location order
+tiff(paste(plot_directory, "barplot_combined_genes_chromosome_order.tiff", sep = ""),res=300,w=4000,h=2000)
+ggplot(v_gene_percents_summary_2, aes(x = reorder(gene, gene_order), y = mean, fill = group)) +
+  geom_bar(position = position_dodge(), stat = "identity", color = "black") +
+  geom_errorbar(aes(ymin = mean - std, ymax = mean + std), width= 0.2, position = position_dodge(0.9)) +
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  labs(title = "Pooled v gene usage - TCR") +
+  xlab("V Gene") +
+  ylab("% of clones") +
+  coord_cartesian(ylim = c(0,1.1*max(v_gene_percents_summary_2$mean + v_gene_percents_summary_2$std)), expand = FALSE) +
+  scale_fill_manual(values = COLOR, name = "") +
+  geom_text(aes(x = reorder(gene, gene_order), y = sig_ypos, label = sig), nudge_y = 0.02*max(v_gene_percents_summary_2$sig_ypos), 
+            size = 5)
+dev.off()
 
 ##OLD
 data_qc$sample_label_level <- substr(data_qc$sample_label, 1, 1)
@@ -241,127 +265,5 @@ p <- pheatmap(cor(v_gene_percents), annotation_col = my_sample_col,
 #corrplot.mixed(cor(v_gene_percents), lower = "number", upper = "shade", order = "hclust", hclust.method = "ward.D2", addrect = 2, 
 #         tl.col = "black", tl.srt = 45)
 print(p)
-dev.off()
-
-##v-gene family
-
-##Calculate v_gene counts and percents from reads for each sample
-##percents calculated individually for each sample (mother or fetus)
-v_family_counts<-as.data.frame.matrix(table(data_qc_clones$v_gene_family, data_qc_clones$sample_label))
-
-##filter out any sample which has fewer than 100 clones... not a problem here, but can be for BCR isotype analysis
-v_family_counts <- v_family_counts[,colSums(v_family_counts) >= 1000]
-v_family_percents<-data.frame(apply(v_family_counts, 2, function(x) prop.table(x)))
-
-##Look at v_gene percentage distribution for just mothers and for just babies
-mothers<-summary_data[summary_data$sample == "Maternal", "pairs"]
-fetuses<-summary_data[summary_data$sample == "Fetal", "pairs"]
-COLOR<-brewer.pal(n = length(mothers), name = "Paired")
-
-##Calculate v_gene counts and percents from reads for POOLED mothers/fetuses
-##No down-sampling, so samples with more reads have higher contribution
-##Pooling these together results in effectively plotting MEANS which means we can calculate STANDARD DEVIATIONS
-##which means we can also COMPARE MEANS AND STANDARD DEVIATIONS within groups
-
-v_family_percents_mothers <- v_family_percents[,mothers]
-v_family_percents_fetuses <- v_family_percents[,fetuses]
-
-means_mothers <- colMeans(t(v_family_percents_mothers))
-stdev_mothers <- sapply(data.frame(t(v_family_percents_mothers)), sd, na.rm = TRUE)
-
-means_fetuses <- colMeans(t(v_family_percents_fetuses))
-stdev_fetuses <- sapply(data.frame(t(v_family_percents_fetuses)), sd, na.rm = TRUE)
-
-v_family_percents_summary <- data.frame(means_mothers = means_mothers, stdev_mothers = stdev_mothers,
-                                      means_fetuses = means_fetuses, stdev_fetuses = stdev_fetuses)
-v_family_percents_summary$gene <- rownames(v_family_percents_summary)
-
-v_family_percents_summary_2 <- rbind(data.frame(gene = names(means_mothers), group = "Maternal", mean = means_mothers, std = stdev_mothers),
-                                     data.frame(gene = names(means_fetuses), group = "Fetal", mean = means_fetuses, std = stdev_fetuses))
-
-
-for (gene in rownames(v_family_percents)){
-  
-  if ((!is.na(v_family_percents_summary[gene, "means_fetuses"])) &
-      (!is.na(v_family_percents_summary[gene, "means_fetuses"]))){
-    v_family_percents_summary[gene, "p_wilcoxon"] <- wilcox.test(unlist(v_family_percents_mothers[gene,]),
-                                                                 unlist(v_family_percents_fetuses[gene,]),
-                                                                 alternative = "two.sided")$p.value
-  }
-  else {
-    v_family_percents_summary[gene, "p_wilcoxon"] <- NA
-  }
-  #print(paste(gene, v_gene_percents_summary[gene, "p_wilcoxon"], sep = "  "))
-}
-
-v_family_percents_summary$p_wilcoxon_adj <- p.adjust(v_family_percents_summary$p_wilcoxon)
-p_w_sig = v_family_percents_summary$p_wilcoxon_adj < 0.05
-
-sig_genes = v_family_percents_summary[v_family_percents_summary$p_wilcoxon_adj < 0.05, "gene"]
-v_family_percents_summary_2_sig = v_family_percents_summary_2[v_family_percents_summary_2$gene %in% sig_genes,]
-
-label = ifelse(p_w_sig, "*", "")
-label = c(label, rep("", length(p_w_sig)))
-
-v_family_percents_summary_2$sig <- label
-v_family_percents_summary_2$sig_ypos <- v_family_percents_summary_2$mean + v_family_percents_summary_2$std
-##if value is NA, set it to 0
-v_family_percents_summary_2$sig_ypos <- ifelse(!is.na(v_family_percents_summary_2$sig_ypos),
-                                               v_family_percents_summary_2$sig_ypos,
-                                               0)
-for (gene in unique(v_family_percents_summary_2$gene)){
-  
-  ypos <- max(v_family_percents_summary_2[(v_family_percents_summary_2$gene == gene), "sig_ypos"])
-  v_family_percents_summary_2[(v_family_percents_summary_2$gene == gene), "sig_ypos"] <- ypos
-  
-}
-
-COLOR=c("#BEAED4","#7FC97F")
-
-tiff(paste(plot_directory, "barplot_combined_genes_family_errorbars.tiff", sep = ""),res=300,w=4000,h=2000)
-ggplot(v_family_percents_summary_2, aes(x = gene, y = mean, fill = group)) +
-  geom_bar(position = position_dodge(), stat = "identity", color = "black") +
-  geom_errorbar(aes(ymin = mean - std, ymax = mean + std), width= 0.2, position = position_dodge(0.9)) +
-  theme(text = element_text(size = 15),
-        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
-  labs(title = "Pooled v gene usage - TCR") +
-  xlab("V Family") +
-  ylab("% of clones") +
-  coord_cartesian(ylim = c(0,1.1*max(v_family_percents_summary_2$mean + v_family_percents_summary_2$std)), expand = FALSE) +
-  scale_fill_manual(values = COLOR, name = "") +
-  geom_text(aes(x = gene, y = sig_ypos), nudge_y = 0.02*max(v_family_percents_summary_2$sig_ypos), 
-            label = label, size = 5)
-dev.off()
-
-tiff(paste(plot_directory, "barplot_combined_genes_family_errorbars_sig.tiff", sep = ""),res=300,w=4000,h=2000)
-ggplot(v_family_percents_summary_2_sig, aes(x = gene, y = mean, fill = group)) +
-  geom_bar(position = position_dodge(), stat = "identity", color = "black") +
-  geom_errorbar(aes(ymin = mean - std, ymax = mean + std), width= 0.2, position = position_dodge(0.9)) +
-  theme(text = element_text(size = 15),
-        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
-  labs(title = "Significantly different genes - TCR") + 
-  xlab("V Family") +
-  ylab("% of clones") +
-  coord_cartesian(ylim = c(0,1.1*max(v_family_percents_summary_2_sig$mean + v_family_percents_summary_2_sig$std)), expand = FALSE) +
-  scale_fill_manual(values = COLOR, name = "")
-dev.off()
-
-#heatmaps
-my_sample_col <- data.frame(pair = gsub("[FMa]", "", colnames(v_family_percents)),
-                            sample = ifelse(substr(colnames(v_family_percents), 1, 1) == "F", "Fetal", "Maternal"))
-rownames(my_sample_col) <- colnames(v_family_percents)
-
-tiff(paste(plot_directory, "heatmap_family.tiff", sep = ""),res=300,w=2000,h=2000)
-pheatmap(v_family_percents, annotation_col = my_sample_col,
-         color = rev(colorRampPalette(rev(brewer.pal(n = 7, name = "YlOrRd")))(100)),
-         main = "Heatmap of Genes/Samples - TCR", fontsize = 8, fontsize_row = 6)
-dev.off()
-
-
-##heatmaps of just significant genes
-tiff(paste(plot_directory, "heatmap_family_sig_genes.tiff", sep = ""),res=300,w=2000,h=2000)
-pheatmap(v_family_percents[sig_genes,], annotation_col = my_sample_col,
-         color = rev(colorRampPalette(rev(brewer.pal(n = 7, name = "YlOrRd")))(100)),
-         main = "Heatmap of Significant Genes - TCR", fontsize = 8, fontsize_row = 6)
 dev.off()
 
