@@ -1,5 +1,5 @@
 #!/bin/bash
-FILES=/Users/Pinedasans/ImmuneRep_Pregnancy/Results/edges*
+FILES=/Users/Pinedasans/ImmuneRep_Pregnancy/Results/Network/IGHM_unmutated/edges*
 export PATH=/Library/Internet\ Plug-Ins/JavaAppletPlugin.plugin/Contents/Home/bin:$PATH
 for f in $FILES
 do  

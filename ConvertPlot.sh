@@ -34,16 +34,3 @@ convert -append IGHM1.tiff IGHM2.tiff IGHM.tiff
 rm IGHM1.tiff
 rm IGHM2.tiff
 
-##Naive
-convert +append barplot_reads_naive.tiff barplot_clones_naive.tiff IGHM1.tiff
-convert +append barplot_SHM_naive.tiff barplot_CDR3_length_naive.tiff IGHM2.tiff
-convert -append IGHM1.tiff IGHM2.tiff IGHM_naive.tiff
-rm IGHM1.tiff
-rm IGHM2.tiff
-
-##Memory
-convert +append barplot_reads_memory.tiff barplot_clones_memory.tiff IGHM1.tiff
-convert +append barplot_SHM_memory.tiff barplot_CDR3_length_memory.tiff IGHM2.tiff
-convert -append IGHM1.tiff IGHM2.tiff IGHM_memory.tiff
-rm IGHM1.tiff
-rm IGHM2.tiff

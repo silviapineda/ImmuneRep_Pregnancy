@@ -22,6 +22,9 @@ library("RColorBrewer")
 library(lme4)
 library(ggpubr)
 library(lmerTest)
+library(finalfit)
+library(gridExtra)
+library(grid)
 
 setwd("/Users/Pinedasans/ImmuneRep_Pregnancy/")
 load("Data/BCR/BCR_data_summary.RData")
@@ -35,7 +38,8 @@ summary_data<-summary_data[order(rownames(summary_data)),]
 ##Clones
 j<-1
 p_adj<-NULL
-for (i in c("clones_IGHA","clones_IGHD","clones_IGHE","clones_IGHG","clones_IGHM","clones_memory","clones_naive")){
+for (i in c("clones_IGHA","clones_IGHD","clones_IGHE","clones_IGHG","clones_IGHM","clones_mutated_IGHM","clones_unmutated_IGHM",
+            "clones_mutated_IGHD","clones_unmutated_IGHD")){
   print(i)
   results<-coefficients(summary(lmer(summary_data[,i] ~ summary_data$sample + summary_data$NumCells + (1| summary_data$pairs))))
   p_adj[j]<-results[2,5]
@@ -49,7 +53,8 @@ for (i in c("clones_IGHA","clones_IGHD","clones_IGHE","clones_IGHG","clones_IGHM
   dev.off()
   j<-j+1
 }
-names(p_adj)<-c("clones_IGHA","clones_IGHD","clones_IGHE","clones_IGHG","clones_IGHM","clones_memory","clones_naive")
+names(p_adj)<-c("clones_IGHA","clones_IGHD","clones_IGHE","clones_IGHG","clones_IGHM","clones_mutated_IGHM","clones_unmutated_IGHM",
+                "clones_mutated_IGHD","clones_unmutated_IGHD")
 write.csv(p_adj,"Results/Diversity/p_adj_clones.csv")
 
 plot(summary_data[,"clones_IGHM"], 
@@ -62,7 +67,8 @@ legend("topright",legend=c("Maternal","Fetal"),
 j<-1
 p_adj<-NULL
 for (i in c("entropy_IGHA","entropy_IGHD","entropy_IGHE",
-            "entropy_IGHG","entropy_IGHM","entropy_memory","entropy_naive")){
+            "entropy_IGHG","entropy_IGHM","entropy_mutated_IGHM","entropy_unmutated_IGHM",
+            "entropy_mutated_IGHD","entropy_unmutated_IGHD")){
   print(i)
   results<-coefficients(summary(lmer(summary_data[,i] ~ summary_data$sample + summary_data$NumCells + (1| summary_data$pairs))))
   p_adj[j]<-results[2,5]
@@ -76,31 +82,17 @@ for (i in c("entropy_IGHA","entropy_IGHD","entropy_IGHE",
   dev.off()
   j<-j+1
 }
-names(p_adj)<-c("entropy_IGHA","entropy_IGHD","entropy_IGHE","entropy_IGHG","entropy_IGHM","entropy_memory","entropy_naive")
+names(p_adj)<-c("entropy_IGHA","entropy_IGHD","entropy_IGHE","entropy_IGHG","entropy_IGHM","entropy_mutated_IGHM","entropy_unmutated_IGHM",
+                "entropy_mutated_IGHD","entropy_unmutated_IGHD")
 write.csv(p_adj,"Results/Diversity/p_adj_entropy.csv")
 
-tiff("Results/plot_IGHM_numcell.tiff",res=300,w=2000,h=2000)
-summary(glm(summary_data[,"entropy_IGHM"]~summary_data[,"NumCells"]))
-plot(summary_data[,"entropy_IGHM"], 
-     summary_data[,"NumCells"],
-     col = COLOR,cex=1.5,pch=20,ylab = "Num cells",xlab = "entropy IGHM (p=0.007)")
-legend("topright",legend=c("Maternal","Fetal"), 
-       col=COLOR,pch=20,cex=c(1.5),ncol=2)
+tiff("Results/plot_entropy_IGHD_numcell.tiff",res=300,w=2000,h=2000)
+ggplot(summary_data,aes(entropy_IGHD,NumCells,color=sample)) + 
+  geom_point() + geom_smooth(method='lm')  +
+  scale_color_manual(values=COLOR)
+summary(glm(summary_data[,"entropy_IGHD"]~summary_data[,"NumCells"]))
 dev.off()
 
-##Clonality
-for (i in c("clonality_IGHA","clonality_IGHD",
-            "clonality_IGHG","clonality_IGHM","clonality_memory","clonality_naive")){
-  print(i)
-  tiff(paste0("Results/boxplot_",i,".tiff"),res=300,w=1500,h=2000)
-  g<-ggpaired(summary_data, x = "sample", y = i,
-              color = "sample", line.color = "gray", line.size = 0.4,
-              palette = c("#BEAED4","#7FC97F"))+theme(text = element_text(size=15)) +
-    labs(title=i,x="Sample", y = "clonality") + theme(legend.position="none") +
-    stat_compare_means(method = "wilcox.test",paired = TRUE)
-  print(g)
-  dev.off()
-}
 
 ##SHM
 j<-1
@@ -124,18 +116,17 @@ write.csv(p_adj,"Results/Diversity/p_adj_SHM.csv")
 
 tiff("Results/plot_SHM_IGHM_numcell.tiff",res=300,w=2000,h=2000)
 summary(glm(summary_data[,"SHM_IGHM"]~summary_data[,"NumCells"]))
-plot(summary_data[,"SHM_IGHM"], 
-     summary_data[,"NumCells"],
-     col = COLOR,cex=1.5,pch=20,ylab = "Num cells",xlab = "SHM_IGHM (p=0.6)")
-legend("topright",legend=c("Maternal","Fetal"), 
-       col=COLOR,pch=20,cex=c(1.5),ncol=2)
+ggplot(summary_data,aes(SHM_IGHM,NumCells,color=sample)) + 
+  geom_point() + geom_smooth(method='lm')  +
+  scale_color_manual(values=COLOR)
 dev.off()
 
 
 ##CDR3
 j<-1
 p_adj<-NULL
-for (i in c("CDR3_length_IGHA","CDR3_length_IGHD","CDR3_length_IGHG","CDR3_length_IGHM","CDR3_length_memory","CDR3_length_naive")){
+for (i in c("CDR3_length_IGHA","CDR3_length_IGHD","CDR3_length_IGHG","CDR3_length_IGHM","CDR3_length_mutated_IGHM","CDR3_length_unmutated_IGHM",
+            "CDR3_length_mutated_IGHD","CDR3_length_unmutated_IGHD")){
   print(i)
   results<-coefficients(summary(lmer(summary_data[,i] ~ summary_data$sample + summary_data$NumCells + (1| summary_data$pairs))))
   p_adj[j]<-results[2,5]
@@ -149,16 +140,15 @@ for (i in c("CDR3_length_IGHA","CDR3_length_IGHD","CDR3_length_IGHG","CDR3_lengt
   dev.off()
   j<-j+1
 }
-names(p_adj)<-c("CDR3_length_IGHA","CDR3_length_IGHD","CDR3_length_IGHG","CDR3_length_IGHM","CDR3_length_memory","CDR3_length_naive")
+names(p_adj)<-c("CDR3_length_IGHA","CDR3_length_IGHD","CDR3_length_IGHG","CDR3_length_IGHM","CDR3_length_mutated_IGHM","CDR3_length_unmutated_IGHM",
+                "CDR3_length_mutated_IGHD","CDR3_length_unmutated_IGHD")
 write.csv(p_adj,"Results/Diversity/p_adj_cdr3.csv")
 
 tiff("Results/plot_CDR3_length_naive_numcell.tiff",res=300,w=2000,h=2000)
-summary(glm(summary_data[,"CDR3_length_naive"]~summary_data[,"NumCells"]))
-plot(summary_data[,"CDR3_length_naive"], 
-     summary_data[,"NumCells"],
-     col = COLOR,cex=1.5,pch=20,ylab = "Num cells",xlab = "CDR3_length_naive (p=0.7)")
-legend("topright",legend=c("Maternal","Fetal"), 
-       col=COLOR,pch=20,cex=c(1.5),ncol=2)
+summary(glm(summary_data[,"CDR3_length_unmutated_IGHD"]~summary_data[,"NumCells"]+summary_data[,"sample"]))
+ggplot(summary_data,aes(CDR3_length_unmutated_IGHD,NumCells,color=sample)) + 
+  geom_point() + geom_smooth(method='lm')  +
+  scale_color_manual(values=COLOR)
 dev.off()
 
 

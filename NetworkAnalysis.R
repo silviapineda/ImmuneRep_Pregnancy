@@ -1,5 +1,5 @@
 rm(list = ls(all = TRUE))
-x<-date()
+x <-date()
 print(x)
 ###########################################################################################
 ### PROJECT: Immune Repertoire. Analysis B cells antibodies for pregnancy outcomes
@@ -24,11 +24,15 @@ setwd("/Users/Pinedasans/ImmuneRep_Pregnancy/")
 load("Data/BCR/BCR_data_summary.RData")
 
 ##1.Obtain the vertex and edges
-Obtain_vertex_edges<-function(data,isotype){
+Obtain_vertex_edges<-function(data,isotype,type_mutated){
  
-  if(isotype=="memory" | isotype=="naive"){
-    data<-data[which(data$IGHM_naive_memory==isotype),]
-  } else{
+  if(type_mutated=="mutated" | type_mutated=="unmutated"){
+    if(isotype=="IGHD"){
+      data<-data[which(data$IGHD_mutated==type_mutated),]
+    } else if (isotype=="IGHM"){
+      data<-data[which(data$IGHM_mutated==type_mutated),]
+    } 
+  } else {
     data<-data[which(data$isotype==isotype),]
   }
   
@@ -47,28 +51,32 @@ Obtain_vertex_edges<-function(data,isotype){
   }
 }
 
-network_IGHM<-Obtain_vertex_edges(data_qc,"IGHM")
+network_IGHM<-Obtain_vertex_edges(data_qc,"IGHM",type_mutated = 0)
 network_IGHD<-Obtain_vertex_edges(data_qc,"IGHD")
 network_IGHG<-Obtain_vertex_edges(data_qc,"IGHG")
 network_IGHA<-Obtain_vertex_edges(data_qc,"IGHA")
-network_memory<-Obtain_vertex_edges(data_qc,"memory")
-network_naive<-Obtain_vertex_edges(data_qc,"naive")
-
-
+network_IGHD_mutated<-Obtain_vertex_edges(data_qc,"IGHD","mutated")
+network_IGHD_unmutated<-Obtain_vertex_edges(data_qc,"IGHD","unmutated")
+network_IGHM_mutated<-Obtain_vertex_edges(data_qc,"IGHM","mutated")
+network_IGHM_unmutated<-Obtain_vertex_edges(data_qc,"IGHM","unmutated")
 
 ##2.Apply the nucleotides-assembly-1.0.jar made by Mikel using the Network.sh 
 
 ##3.Plot the network
 sample<-unique(data_qc$sample_label)
 
-isotype="IGHM"
-
+isotype="IGHM_mutated"
+if(isotype =="IGHD_mutated" | isotype =="IGHD_unmutated" | isotype =="IGHM_mutated" | isotype =="IGHM_unmutated"){
+  isotype2 = substr(isotype,1,4)
+} else {
+  isotype2 = isotype
+}
 ##Mother
-sample_M<-sample[which(summary_data$sample=="Mother")] 
+sample_M<-sample[which(summary_data$sample=="Maternal")] 
 for(i in sample_M) {
   print(i)
-    edges <- read.delim(paste("Results/Network/",isotype,"/edges_",isotype,"_",i,".txt.outcome.txt",sep = ""))
-    vertex <- read.delim(paste("Results/Network/",isotype,"/vertex_",isotype,"_",i,".txt",sep = ""))
+    edges <- read.delim(paste("Results/Network/",isotype,"/edges_",isotype2,"_",i,".txt.outcome.txt",sep = ""))
+    vertex <- read.delim(paste("Results/Network/",isotype,"/vertex_",isotype2,"_",i,".txt",sep = ""))
     net<-graph_from_data_frame(d=edges,vertices = vertex,directed=F)
     V(net)$size <- V(net)$Freq/100
     V(net)$color <- c("#BEAED4")
@@ -77,16 +85,16 @@ for(i in sample_M) {
     E(net)$width <- 0.4
     E(net)$color <- c("black")
     tiff(paste("Results/Network/",isotype,"/network_",isotype,"_",i,".tiff",sep=""),res=300,h=3000,w=3000)
-    plot(net,vertex.label=NA,layout=layout_with_graphopt(net))
+    plot(net,vertex.label=NA,layout=layout_with_graphopt(net,niter=800))
     dev.off()
 }
 
 ##Fetus
-sample_F<-sample[which(summary_data$sample=="Fetus")] 
+sample_F<-sample[which(summary_data$sample=="Fetal")] 
 for(i in sample_F) {
   print(i)
-  edges <- read.delim(paste("Results/Network/",isotype,"/edges_",isotype,"_",i,".txt.outcome.txt",sep = ""))
-  vertex <- read.delim(paste("Results/Network/",isotype,"/vertex_",isotype,"_",i,".txt",sep = ""))
+  edges <- read.delim(paste("Results/Network/",isotype,"/edges_",isotype2,"_",i,".txt.outcome.txt",sep = ""))
+  vertex <- read.delim(paste("Results/Network/",isotype,"/vertex_",isotype2,"_",i,".txt",sep = ""))
   net<-graph_from_data_frame(d=edges,vertices = vertex,directed=F)
   V(net)$size <- V(net)$Freq/100
   V(net)$color <- c("#7FC97F")
@@ -95,21 +103,20 @@ for(i in sample_F) {
   E(net)$width <- 0.4
   E(net)$color <- c("black")
   tiff(paste("Results/Network/",isotype,"/network_",isotype,"_",i,".tiff",sep=""),res=300,h=3000,w=3000)
-  plot(net,vertex.label=NA,layout=layout_with_graphopt(net))
+  plot(net,vertex.label=NA,layout=layout_with_graphopt(net,niter=800))
   dev.off()
 }
 
 
 ##4. Obtain the vertex and cluster Gini index
 Obtain_gini_index<-function(data,isotype,summary_data){
-  if(isotype=="memory" | isotype=="naive"){
-    data<-data[which(data$IGHM_naive_memory==isotype),]
-  } else{
-    data<-data[which(data$isotype==isotype),]
-  }
   
-  data$CloneId_CDR3<-paste0(data[,c("V_J_lenghCDR3_Clone_igh")],data[,c("cdr3_seq_aa_q")])
-  sample<-unique(data$sample_label)
+  if(isotype =="IGHD_mutated" | isotype =="IGHD_unmutated" | isotype =="IGHM_mutated" | isotype =="IGHM_unmutated"){
+    isotype2 = substr(isotype,1,4)
+  } else {
+    isotype2 = isotype
+  }
+  sample<-rownames(summary_data)
   
   vertex_max<-NULL
   vertex_gini<-NULL
@@ -119,8 +126,8 @@ Obtain_gini_index<-function(data,isotype,summary_data){
   clusters<-NULL
   j<-1
   for (i in sample){
-    assign(paste0("edges",i),read.delim(paste0("Results/Network/",isotype,"/edges_",isotype,"_",i,".txt")))
-    assign(paste0("vertex",i),read.delim(paste0("Results/Network/",isotype,"/vertex_",isotype,"_",i,".txt")))
+    assign(paste0("edges",i),read.delim(paste0("Results/Network/",isotype,"/edges_",isotype2,"_",i,".txt")))
+    assign(paste0("vertex",i),read.delim(paste0("Results/Network/",isotype,"/vertex_",isotype2,"_",i,".txt")))
     vertex_max[j]<-max(get(paste0("vertex",i))$Freq)
     vertex_gini[j]<-Gini(get(paste0("vertex",i))$Freq)
     cluster_max[j]<-max(table(get(paste0("edges",i))$V_J_lenghCDR3_Clone_igh))
@@ -139,13 +146,17 @@ Obtain_gini_index<-function(data,isotype,summary_data){
 }
 
 ###Plot Gini boxplot
-isotype = "naive"
+isotype = "IGHM_mutated"
 assign(paste0("cluster_gini_",isotype),data.frame(Obtain_gini_index(data_qc,isotype,summary_data)))
+assign(paste0("summary_data_gini",isotype),cbind(summary_data,cluster_gini_IGHD_mutated))
+
+write.csv(get(paste0("summary_data_gini",isotype)),file=paste0("Results/Network/summary_data_gini",isotype,".csv"))
+
 
 brewer.pal(n = 3, name = "Accent")
 COLOR=c("#BEAED4","#7FC97F")
 
-tiff(paste0("Results/network_vertex_cluster_gini_",isotype,".tiff"),h=2000,w=2000,res=300)
+tiff(paste0("Results/Network/network_vertex_cluster_gini_",isotype,".tiff"),h=2000,w=2000,res=300)
 par(fig=c(0,0.8,0,0.8))
 plot(get(paste0("cluster_gini_",isotype))[,"cluster_gini"], 
          get(paste0("cluster_gini_",isotype))[,"vertex_gini"],
@@ -250,8 +261,10 @@ for (i in sample){
 }
 clonal_expansion<-(num_reads_max_cluster/summary_data[,"read_count"])*100
 cluster_gini_TCR<-data.frame(cbind(cluster_gini,vertex_gini,vertex_max,cluster_max,num_reads_max_cluster,clusters,clonal_expansion))
-
 rownames(cluster_gini_TCR)<-sample
+summary_data_gini_TCR<-cbind(summary_data,cluster_gini_TCR)
+write.csv(summary_data_gini_TCR,file="Results/Network/summary_data_gini_TCR.csv")
+
 
 ###Plot Gini boxplot
 brewer.pal(n = 3, name = "Accent")
