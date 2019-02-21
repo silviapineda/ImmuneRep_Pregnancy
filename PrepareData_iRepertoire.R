@@ -9,7 +9,7 @@
 ###         
 ###
 ### Author: Brian Le
-### Date: January, 2019
+### Date: February, 2019
 ############################################################################################
 
 directory <- "iRepertoire/"
@@ -18,9 +18,9 @@ summary_path_1 <- "iRepertoire/x5714-JH-0003-UCSFSperDUOA_summary.csv"
 summary_path_2 <- "iRepertoire/x5714-JH-0004-UCSFSperDUOB_summary.csv"
 sample_outcome_path <- "iRepertoire/sample_outcome.csv"
 
+##combine iRepertoire's summary data
 summary_data <- rbind(read.csv(summary_path_1),
                       read.csv(summary_path_2))
-sample_outcome <- read.csv(sample_outcome_path)
 
 summary_data$sample_name <- gsub("_.*", "", summary_data$Sample)
 summary_data$sample_number <- gsub("[A-Z]", "", summary_data$sample_name)
@@ -34,6 +34,8 @@ summary_data$sample_population_type <- ifelse(grepl("CD19", summary_data$sample_
                                                      ifelse(grepl("CD4", summary_data$sample_population), "CD4", "TCR"
                                                             )))
 
+##read in outcomes (normal vs preterm labor)
+sample_outcome <- read.csv(sample_outcome_path)
 summary_data <- merge(summary_data, sample_outcome,
                       by = "sample_number",
                       all.x = TRUE, all.y = FALSE)
@@ -48,6 +50,6 @@ for(i in sample_locations) {
   t$sample <- gsub(".*/", "", i)
   data <- rbind(data, t)
 }
-test <- read.delim(paste(sample_locations[1], "_pep.csv", sep = ""))
 
-save(data, file=paste(directory, 'iRepertoire_data.RData', sep = ""))
+
+save(data, summary_data, file=paste(directory, 'iRepertoire_data.RData', sep = ""))
