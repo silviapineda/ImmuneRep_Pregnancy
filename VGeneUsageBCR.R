@@ -31,7 +31,7 @@ data_qc$d_gene <- gsub("\\*.*$", "", data_qc$d_segment)
 data_qc$v_gene_family <- gsub("\\-.*$", "", data_qc$v_gene)
 
 ##Isolate unique clones per isotype per sample to perform clone-level analysis
-data_qc_clones<-data_qc[,c("sample_label", "isotype", "V_J_lenghCDR3_Clone_igh", "v_gene", "v_gene_family", "IGHM_mutated", "IGHD_mutated")]
+data_qc_clones<-data_qc[,c("sample_label", "isotype", "V_J_lenghCDR3_Clone_igh", "v_gene", "v_gene_family", "IGHM_mutated", "IGHD_mutated", "d_gene")]
 mask<-!duplicated(data_qc_clones[,c("V_J_lenghCDR3_Clone_igh", "sample_label", "isotype")])
 data_qc_clones<-data_qc_clones[mask,]
 
@@ -242,7 +242,7 @@ for (isotype in isotypes){
   dev.off()
 }
 
-##repeat plots/heatmaps for IGHD and IGHM, splitting into unmutated (mutate_rate <= 0.1) and mutated (mutate_rate > 0.1)
+##repeat plots/heatmaps for IGHD and IGHM, splitting into unmutated (mutate_rate <= 0.01) and mutated (mutate_rate > 0.01)
 
 for (isotype in c("IGHD", "IGHM")){
   
@@ -421,3 +421,13 @@ pheatmap(rcorr(as.matrix(v_gene_percents))$r)
 
 corrplot(cor(v_gene_percents), type = "upper", order = "hclust", 
          tl.col = "black", tl.srt = 45)
+
+mat <- table(data_qc_clones$isotype, data_qc_clones$sample_label)
+pheatmap(t(mat),
+         cluster_rows = FALSE, cluster_cols = FALSE,
+         display_numbers = t(mat),
+         color = rev(colorRampPalette(rev(brewer.pal(n = 7, name = "Greens")))(100)))
+
+
+data_qc_clones$d_gene_status <- ifelse(data_qc_clones$d_gene == "", 0, 1)
+table(data_qc_clones$isotype, data_qc_clones$d_gene_status)

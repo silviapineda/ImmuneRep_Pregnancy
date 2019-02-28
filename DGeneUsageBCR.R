@@ -301,7 +301,7 @@ for (isotype in c("IGHD", "IGHM")){
       theme(text = element_text(size = 15),
             axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
       labs(title = paste("Significantly different genes - ", isotype, " ", mutate, sep = "")) + 
-      xlab("V Gene") +
+      xlab("D Gene") +
       ylab("% of clones") +
       coord_cartesian(ylim = c(0,1.1*max(0, v_gene_percents_summary_2$mean + v_gene_percents_summary_2$std,
                                          na.rm = TRUE)),
@@ -323,8 +323,8 @@ for (isotype in c("IGHD", "IGHM")){
       geom_errorbar(aes(ymin = mean - std, ymax = mean + std), width= 0.2, position = position_dodge(0.9)) +
       theme(text = element_text(size = 15),
             axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
-      labs(title = paste("Pooled v gene usage - ", isotype, " ", mutate, sep = "")) +
-      xlab("V Gene") +
+      labs(title = paste("Pooled d gene usage - ", isotype, " ", mutate, sep = "")) +
+      xlab("D Gene") +
       ylab("% of clones") +
       coord_cartesian(ylim = c(0,1.1*max(0, v_gene_percents_summary_2$mean + v_gene_percents_summary_2$std,
                                          na.rm = TRUE)), #0 provided in max as a fail case for empty dataframes
