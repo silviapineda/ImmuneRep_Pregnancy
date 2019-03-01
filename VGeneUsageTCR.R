@@ -110,7 +110,7 @@ v_gene_percents_summary_2 <- rbind(data.frame(gene = names(means_mothers), group
 for (gene in rownames(v_gene_percents)){
   
   if ((!is.na(v_gene_percents_summary[gene, "means_fetuses"])) &
-      (!is.na(v_gene_percents_summary[gene, "means_fetuses"]))){
+      (!is.na(v_gene_percents_summary[gene, "means_mothers"]))){
     v_gene_percents_summary[gene, "p_wilcoxon"] <- wilcox.test(unlist(v_gene_percents_mothers[gene,]),
                                                                unlist(v_gene_percents_fetuses[gene,]),
                                                                #paired = TRUE,
