@@ -104,12 +104,16 @@ v_gene_percents_summary_2 <- rbind(data.frame(gene = names(means_mothers), group
 #p_t = pt(t, df = n1 + n2 - 2)
 #p_t_sig = p_t < 0.05
 
+
+##wilcoxon UNPAIRED rank sum test comparing gene distributions between mothers and fetuses
+##unpaired to match BCR analysis where not all pairs of samples included due to 1000 clone minimum
 for (gene in rownames(v_gene_percents)){
   
   if ((!is.na(v_gene_percents_summary[gene, "means_fetuses"])) &
-      (!is.na(v_gene_percents_summary[gene, "means_fetuses"]))){
+      (!is.na(v_gene_percents_summary[gene, "means_mothers"]))){
     v_gene_percents_summary[gene, "p_wilcoxon"] <- wilcox.test(unlist(v_gene_percents_mothers[gene,]),
                                                                unlist(v_gene_percents_fetuses[gene,]),
+                                                               #paired = TRUE,
                                                                alternative = "two.sided")$p.value
   }
   else {
