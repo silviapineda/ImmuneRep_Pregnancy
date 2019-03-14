@@ -21,6 +21,13 @@ library("RColorBrewer")
 setwd("/Users/Pinedasans/ImmuneRep_Pregnancy/")
 load("Data/BCR/BCR_data_summary.RData")
 
+
+###Prepare data to riun the python script using tha aa
+data_qc$V_J_lenghCDR3aa = paste(data_qc$v_gene, data_qc$j_gene, nchar(as.character(data_qc$cdr3_seq_aa_q)),sep="_")
+data_qc$unique_id<-seq(1,nrow(data_qc))
+data_clonesInference_aa<-data_qc[,c("unique_id","sample_label","cdr3_seq_aa_q","v_gene","j_gene","V_J_lenghCDR3aa")]
+write.table(data_clonesInference_aa,file="Data/BCR/data_clonesInference_aa.txt",row.names = F,sep="\t")
+
 ###################################################
 ## Common clones across mother and Fetus (BCR) ##
 #################################################
@@ -29,7 +36,7 @@ isotype="IGHD"
 ############
 ## 1. Build the matrix with the clones by samples
 data_qc_isotype<-data_qc[which(data_qc$isotype==isotype),]
-clone_type<-t(as.data.frame(unclass(table(data_qc_isotype$V_J_lenghCDR3_Clone_igh,factor(data_qc_isotype$sample_label))))) # 31,547 (IGHA) #364755 (IGHD) #25591 (IGHG) #1 (IGHM)
+clone_type<-t(as.data.frame(unclass(table(data_qc_isotype$,factor(data_qc_isotype$sample_label))))) # 31,547 (IGHA) #364755 (IGHD) #25591 (IGHG) #1 (IGHM)
 ##Build present vs no present
 clone_type_presence<-apply(clone_type,1,function(x) ifelse(x==0,0,1))
 ###Filter by clones that at least are share in 2 samples
