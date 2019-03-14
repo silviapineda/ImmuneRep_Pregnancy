@@ -45,9 +45,6 @@ for (b in 1:10){
     data_qc_downsampled<-rbind(data_qc_downsampled,data_qc_downsampled_reads[id_down,])
   }
   save(data_qc_downsampled,file=paste0("Data/BCR/data_downsampled_",b,".Rdata"))
-  
-  
-    
 }
 
 ###Prepare the data for the python script using python3
@@ -56,8 +53,10 @@ for (i in 1:10){
   data_qc_downsampled$V_J_lenghCDR3 = paste(data_qc_downsampled$v_gene, data_qc_downsampled$j_gene, nchar(data_qc_downsampled$cdr3_seq),sep="_")
   data_qc_downsampled$unique_id<-seq(1,nrow(data_qc_downsampled))
   data_clonesInference<-data_qc_downsampled[,c("unique_id","sample_label","cdr3_seq","CDR3_length","v_gene","j_gene","V_J_lenghCDR3")]
-  write.table(data_clonesInference,file=paste0("Data/BCR/data_clonesInference_down",i,".txt"),row.names = F,sep="\t")
+  data_clonesInference<-data_clonesInference[which(data_clonesInference$CDR3_length)]
+   write.table(data_clonesInference,file=paste0("Data/BCR/data_clonesInference_down",i,".txt"),row.names = F,sep="\t")
 }  
+
 
 
 ##TCR
