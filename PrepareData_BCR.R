@@ -56,6 +56,9 @@ data_qc$SHM_freq<-data_qc$SHM/data_qc$Vlength
 ##count the CDR3 length
 data_qc$CDR3_length<-nchar(as.character(data_qc$cdr3_seq))
 
+####CDR3 missing filter out
+data_qc<-data_qc[which(data_qc$CDR3_length>4),]
+
 ##count the read length
 data_qc$read_length<-nchar(as.character(data_qc$trimmed_sequence))
 
@@ -256,3 +259,5 @@ rownames(diversity)<-sample
 summary_data<-cbind(summary_data,diversity)
 
 save(data_qc,summary_data,file="Data/BCR_data_summary.RData")
+
+
