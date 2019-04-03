@@ -18,9 +18,9 @@ library(ggplot2)
 
 directory <- "iRepertoire/"
 
-load(file=paste(directory, 'iRepertoire_V_1_usage_data.RData', sep = ""))
+load(file=paste(directory, 'iRepertoire_data/iRepertoire_V_1_usage_data.RData', sep = ""))
 
-summary_file_path <- paste(directory, 'iRepertoire_summary_data.csv', sep = "")
+summary_file_path <- paste(directory, 'iRepertoire_data/iRepertoire_summary_data.csv', sep = "")
 summary_data <- read.csv(summary_file_path)
 
 ##do some clean up
@@ -32,107 +32,6 @@ v_gene_data <- merge(data, summary_data[,c("Sample.id", "sample_name", "sample_t
                      by.x = "sample", by.y = "Sample.id",
                      all.x = TRUE, all.y = FALSE
                      )
-
-##start by looking at CD4, looking at decidua vs maternal_blood
-
-v_gene_data_subset <- v_gene_data[v_gene_data$sample_population_type == "CD4",]
-
-##use cast() from reshape package to create table of percentages
-v_gene_percents <- cast(v_gene_data_subset, v_gene ~ sample_name, value = "usage")
-rownames(v_gene_percents) <- v_gene_percents$v_gene
-v_gene_percents <- v_gene_percents[,2:ncol(v_gene_percents)]
-
-sample_names <- unique(summary_data$sample_name)
-decidua <- sample_names[substr(sample_names, 1, 1) == "D"]
-m_blood <- sample_names[substr(sample_names, 1, 1) == "M"]
-
-genes <- rownames(v_gene_percents)
-
-v_gene_percents_decidua <- v_gene_percents[,decidua]
-v_gene_percents_m_blood <- v_gene_percents[,m_blood]
-
-means_decidua <- colMeans(t(v_gene_percents_decidua))
-stdev_decidua <- sapply(transpose(v_gene_percents_decidua), sd, na.rm = TRUE)
-
-means_m_blood <- colMeans(t(v_gene_percents_m_blood))
-stdev_m_blood <- sapply(transpose(v_gene_percents_m_blood), sd, na.rm = TRUE)
-
-v_gene_percents_summary <- data.frame(means_decidua = means_decidua, stdev_decidua = stdev_decidua,
-                                      means_m_blood = means_m_blood, stdev_m_blood = stdev_m_blood,
-                                      row.names = genes)
-
-v_gene_percents_summary$gene <- rownames(v_gene_percents_summary)
-
-v_gene_percents_summary_2 <- rbind(data.frame(gene = genes, group = "Decidua", mean = means_decidua, std = stdev_decidua),
-                                   data.frame(gene = genes, group = "Maternal Blood", mean = means_m_blood, std = stdev_m_blood))
-
-##wilcoxon PAIRED rank sum test comparing gene distributions between decidua and m_blood
-##unpaired to match BCR analysis where not all pairs of samples included due to 1000 clone minimum
-for (gene in genes){
-  
-  if ((!is.na(v_gene_percents_summary[gene, "means_m_blood"])) &
-      (!is.na(v_gene_percents_summary[gene, "means_m_blood"]))){
-    v_gene_percents_summary[gene, "p_wilcoxon"] <- wilcox.test(unlist(v_gene_percents_decidua[gene,]),
-                                                               unlist(v_gene_percents_m_blood[gene,]),
-                                                               paired = TRUE,
-                                                               alternative = "two.sided")$p.value
-  }
-  else {
-    v_gene_percents_summary[gene, "p_wilcoxon"] <- NA
-  }
-  #print(paste(gene, v_gene_percents_summary[gene, "p_wilcoxon"], sep = "  "))
-}
-
-v_gene_percents_summary$p_wilcoxon_adj <- p.adjust(v_gene_percents_summary$p_wilcoxon)
-p_w_sig = v_gene_percents_summary$p_wilcoxon_adj < 0.05
-
-sig_genes = v_gene_percents_summary[v_gene_percents_summary$p_wilcoxon_adj < 0.05, "gene"]
-v_gene_percents_summary_2_sig = v_gene_percents_summary_2[v_gene_percents_summary_2$gene %in% sig_genes,]
-
-label = ifelse(p_w_sig, "*", "")
-label = c(label, rep("", length(p_w_sig)))
-
-v_gene_percents_summary_2$sig <- label
-v_gene_percents_summary_2$sig_ypos <- v_gene_percents_summary_2$mean + v_gene_percents_summary_2$std
-##if value is NA, set it to 0
-v_gene_percents_summary_2$sig_ypos <- ifelse(!is.na(v_gene_percents_summary_2$sig_ypos),
-                                             v_gene_percents_summary_2$sig_ypos,
-                                             0)
-for (gene in unique(v_gene_percents_summary_2$gene)){
-  
-  ypos <- max(v_gene_percents_summary_2[(v_gene_percents_summary_2$gene == gene), "sig_ypos"])
-  v_gene_percents_summary_2[(v_gene_percents_summary_2$gene == gene), "sig_ypos"] <- ypos
-  
-}
-
-COLOR=c("#BEAED4","#7FC97F")
-
-#load in ordering on 7q34 chromosome for TRB genes, order barplot by ordering
-filepath = "TRB_gene_order.csv"
-v_gene_order = read.csv(filepath)
-colnames(v_gene_order)[1] <- "gene"
-
-#append gene_order from imgt to dataframe
-v_gene_percents_summary_2 <- merge(v_gene_percents_summary_2, v_gene_order[,c("gene", "gene_order")],
-                                   all.x = TRUE, all.y = FALSE)
-
-##plotting by ordering the v genes by chromosome location order
-#tiff(paste(plot_directory, "barplot_combined_genes_chromosome_order.tiff", sep = ""),res=300,w=4000,h=2000)
-p <- ggplot(v_gene_percents_summary_2, aes(x = reorder(gene, gene_order), y = mean, fill = group)) +
-  geom_bar(position = position_dodge(), stat = "identity", color = "black") +
-  geom_errorbar(aes(ymin = mean - std, ymax = mean + std), width= 0.2, position = position_dodge(0.9)) +
-  theme(text = element_text(size = 15),
-        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
-  labs(title = "Pooled v gene usage - TCR") +
-  xlab("V Gene") +
-  ylab("% of clones") +
-  coord_cartesian(ylim = c(0,1.1*max(v_gene_percents_summary_2$mean + v_gene_percents_summary_2$std)), expand = FALSE) +
-  scale_fill_manual(values = COLOR, name = "") +
-  geom_text(aes(x = reorder(gene, gene_order), y = sig_ypos, label = sig), nudge_y = 0.02*max(v_gene_percents_summary_2$sig_ypos), 
-            size = 5)
-print(p)
-#dev.off()
-
 
 ##let's do a loop, comparing term to preterm for CD4, CD8, CD19, TCR, each by m_blood and decidua
 
@@ -224,10 +123,7 @@ for (pop in sample_pops){
       v_gene_percents_summary_2[(v_gene_percents_summary_2$gene == gene), "sig_ypos"] <- ypos
       
     }
-    
     COLOR=c("#BEAED4","#7FC97F")
-    
-    
     ##plotting by ordering the v genes by chromosome location order
     tiff(paste(plot_directory, "pooled_", type, "_", pop, ".tiff", sep = ""),res=300,w=4000,h=2000)
     p <- ggplot(v_gene_percents_summary_2, aes(x = gene, y = mean, fill = group)) +
@@ -244,7 +140,115 @@ for (pop in sample_pops){
                 size = 5)
     print(p)
     dev.off()
-    
+  }
+}
 
+###let's do another loop!
+##comparing m_blood to decidua for CD4, CD8, CD19, TCR, each by term and preterm
+
+plot_directory <- "iRepertoire/Results/V_gene_usage/"
+dir.create(plot_directory)
+
+sample_pops <- c('CD4', 'CD8', 'CD19', 'TCR')
+sample_types <- c('decidua', 'maternal_blood')
+sample_outcomes <- c('normal', 'ptl')
+
+for (pop in sample_pops){
+  for (outcome in sample_outcomes){
+    
+    sample_numbers <- summary_data[which(summary_data$sample_population_type == pop &
+                                         summary_data$outcome == outcome), "Sample.id"]
+    
+    samples_decidua <- summary_data[which(summary_data$sample_population_type == pop &
+                                            summary_data$outcome == outcome &
+                                            summary_data$sample_type == "decidua"), "Sample.id"]
+    
+    samples_mblood <- summary_data[which(summary_data$sample_population_type == pop &
+                                            summary_data$outcome == outcome &
+                                            summary_data$sample_type == "maternal_blood"), "Sample.id"]
+    
+    ##reduce data to the chosen samples
+    v_gene_data_subset <- v_gene_data[v_gene_data$sample %in% sample_numbers,]
+    
+    ##use cast() from reshape package to create table of percentages
+    v_gene_percents <- cast(v_gene_data_subset, v_gene ~ sample, value = "usage")
+    rownames(v_gene_percents) <- v_gene_percents$v_gene
+    v_gene_percents <- v_gene_percents[,2:ncol(v_gene_percents)]
+    
+    genes <- rownames(v_gene_percents)
+    
+    v_gene_percents_decidua <- v_gene_percents[,as.character(samples_decidua)]
+    v_gene_percents_mblood <- v_gene_percents[,as.character(samples_mblood)]
+    
+    means_decidua <- colMeans(t(v_gene_percents_decidua))
+    stdev_decidua <- sapply(transpose(v_gene_percents_decidua), sd, na.rm = TRUE)
+    
+    means_mblood <- colMeans(t(v_gene_percents_mblood))
+    stdev_mblood <- sapply(transpose(v_gene_percents_mblood), sd, na.rm = TRUE)
+    
+    v_gene_percents_summary <- data.frame(means_decidua = means_decidua, stdev_decidua = stdev_decidua,
+                                          means_mblood = means_mblood, stdev_mblood = stdev_mblood,
+                                          row.names = genes)
+    
+    v_gene_percents_summary$gene <- rownames(v_gene_percents_summary)
+    
+    v_gene_percents_summary_2 <- rbind(data.frame(gene = genes, group = "decidua", mean = means_decidua, std = stdev_decidua),
+                                       data.frame(gene = genes, group = "maternal_blood", mean = means_mblood, std = stdev_mblood))
+    
+    ##wilcoxon PAIRED rank sum test comparing gene distributions between decidua and m_blood for the same samples
+
+    for (gene in genes){
+      
+      if ((!is.na(v_gene_percents_summary[gene, "means_decidua"])) &
+          (!is.na(v_gene_percents_summary[gene, "means_mblood"]))){
+        v_gene_percents_summary[gene, "p_wilcoxon"] <- wilcox.test(unlist(v_gene_percents_decidua[gene,]),
+                                                                   unlist(v_gene_percents_mblood[gene,]),
+                                                                   paired = TRUE,
+                                                                   alternative = "two.sided")$p.value
+      }
+      else {
+        v_gene_percents_summary[gene, "p_wilcoxon"] <- NA
+      }
+      #print(paste(gene, v_gene_percents_summary[gene, "p_wilcoxon"], sep = "  "))
+    }
+    
+    v_gene_percents_summary$p_wilcoxon_adj <- p.adjust(v_gene_percents_summary$p_wilcoxon)
+    p_w_sig = v_gene_percents_summary$p_wilcoxon_adj < 0.05
+    
+    sig_genes = v_gene_percents_summary[v_gene_percents_summary$p_wilcoxon_adj < 0.05, "gene"]
+    v_gene_percents_summary_2_sig = v_gene_percents_summary_2[v_gene_percents_summary_2$gene %in% sig_genes,]
+    
+    label = ifelse(p_w_sig, "*", "")
+    label = c(label, rep("", length(p_w_sig)))
+    
+    v_gene_percents_summary_2$sig <- label
+    v_gene_percents_summary_2$sig_ypos <- v_gene_percents_summary_2$mean + v_gene_percents_summary_2$std
+    ##if value is NA, set it to 0
+    v_gene_percents_summary_2$sig_ypos <- ifelse(!is.na(v_gene_percents_summary_2$sig_ypos),
+                                                 v_gene_percents_summary_2$sig_ypos,
+                                                 0)
+    for (gene in unique(v_gene_percents_summary_2$gene)){
+      
+      ypos <- max(v_gene_percents_summary_2[(v_gene_percents_summary_2$gene == gene), "sig_ypos"])
+      v_gene_percents_summary_2[(v_gene_percents_summary_2$gene == gene), "sig_ypos"] <- ypos
+      
+    }
+    COLOR=c("#BEAED4","#7FC97F")
+    ##plotting by ordering the v genes by chromosome location order
+    tiff(paste(plot_directory, "pooled_", outcome, "_", pop, ".tiff", sep = ""),res=300,w=4000,h=2000)
+    p <- ggplot(v_gene_percents_summary_2, aes(x = gene, y = mean, fill = group)) +
+      geom_bar(position = position_dodge(), stat = "identity", color = "black") +
+      geom_errorbar(aes(ymin = mean - std, ymax = mean + std), width= 0.2, position = position_dodge(0.9)) +
+      theme(text = element_text(size = 15),
+            axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+      labs(title = paste("Pooled v gene usage - ", outcome, " - ", pop, sep = "")) +
+      xlab("V Gene") +
+      ylab("% of clones") +
+      coord_cartesian(ylim = c(0,1.1*max(v_gene_percents_summary_2$mean + v_gene_percents_summary_2$std)), expand = FALSE) +
+      scale_fill_manual(values = COLOR, name = "") +
+      geom_text(aes(x = gene, y = sig_ypos, label = sig), nudge_y = 0.02*max(v_gene_percents_summary_2$sig_ypos), 
+                size = 5)
+    print(p)
+    dev.off()
   }
 }
