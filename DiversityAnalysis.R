@@ -27,30 +27,44 @@ library(gridExtra)
 library(grid)
 
 setwd("/Users/Pinedasans/ImmuneRep_Pregnancy/")
-load("Data/BCR/BCR_data_summary.RData")
+load("Data/BCR_PTB_Term/BCR_PTB_Term_data_summary.RData")
 
 ###Function to plot summary plots with bar plots
 ####Summary plots
-brewer.pal(n = 3, name = "Accent")
-COLOR=c("#BEAED4","#7FC97F")
+cols=brewer.pal(3,name = "Accent")
+
+###Delete the twin for analysis
+summary_data<-summary_data[-c(39:41),]
 summary_data<-summary_data[order(rownames(summary_data)),]
 
 ##Clones
-j<-1
-p_adj<-NULL
-for (i in c("clones_IGHA","clones_IGHD","clones_IGHE","clones_IGHG","clones_IGHM","clones_mutated_IGHM","clones_unmutated_IGHM",
-            "clones_mutated_IGHD","clones_unmutated_IGHD")){
+markers<-c("clones_IGHA","clones_IGHD","clones_IGHE","clones_IGHG","clones_IGHM","clones_mutated_IGHM","clones_unmutated_IGHM",
+          "clones_mutated_IGHD","clones_unmutated_IGHD")
+
+p_PTB<-NULL
+p_Fetal<-NULL
+for (i in 1:length(markers)){
   print(i)
-  results<-coefficients(summary(lmer(summary_data[,i] ~ summary_data$sample + summary_data$NumCells + (1| summary_data$pairs))))
-  p_adj[j]<-results[2,5]
-  tiff(paste0("Results/boxplot_",i,".tiff"),res=300,w=1500,h=2000)
-  g<-ggpaired(summary_data, x = "sample", y = i,
-              color = "sample", line.color = "gray", line.size = 0.4,
-              palette = c("#BEAED4","#7FC97F"))+theme(text = element_text(size=15)) +
-    labs(title=i,x="Sample", y = "Number of clones") + theme(legend.position="none") +
-    stat_compare_means(method = "wilcox.test",paired = TRUE)
-  print(g)
-  dev.off()
+  results<-coefficients(summary(glm(summary_data[,markers[i]] ~ summary_data$Outcome +summary_data$sample)))
+  p_PTB[i]<-results[2,4]
+  p_Fetal[i]<-results[3,4]
+  summary_data$Marker<-summary_data[,markers[i]]
+  tiff(paste0("Results/boxplot_Term_PTB",i,".tiff"),res=300,w=1500,h=2000)
+  ggplot(summary_data) + geom_boxplot(aes(y = Marker, x = sample, fill = Outcome, color=Outcome),alpha = 0, position = position_dodge(width = .8)) +
+    geom_point(aes(y=Marker, color=Outcome,x=sample,fill=Outcome), position = position_jitterdodge(dodge.width = 0.8)) +     
+    scale_color_manual(values = c(cols[1], cols[2]), labels = c("Term", "PTB")) +
+    scale_y_continuous(name=markers[i]) + stat_compare_means(aes(x=sample, y=Marker, color=Outcome,fill=Outcome,label.x.npc = "center"))
+
+    
+  
+  
+  #g<-ggpaired(summary_data, x = "Outcome", y = i,
+  #            color = "Outcome", line.color = "gray", line.size = 0.4,
+   #           palette = c("#BEAED4","#7FC97F"))+theme(text = element_text(size=15)) +
+   # labs(title=i,x="Outcome", y = "Number of clones") + theme(legend.position="none") +
+  #  stat_compare_means(method = "wilcox.test")
+  #print(g)
+  #dev.off()
   j<-j+1
 }
 names(p_adj)<-c("clones_IGHA","clones_IGHD","clones_IGHE","clones_IGHG","clones_IGHM","clones_mutated_IGHM","clones_unmutated_IGHM",
