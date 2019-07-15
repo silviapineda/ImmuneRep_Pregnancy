@@ -38,6 +38,9 @@ v_gene_counts<-as.data.frame.matrix(table(data_qc_clones$v_gene, data_qc_clones$
 v_gene_counts <- v_gene_counts[,colSums(v_gene_counts) >= 1000]
 v_gene_percents<-data.frame(apply(v_gene_counts, 2, function(x) prop.table(x)))
 
+write.csv(v_gene_percents, file = paste0(plot_directory, "v_gene_percents.csv"))
+
+
 #barplot(as.matrix(v_gene_percents),col=COLOR,
 #        names.arg = summary_data$pairs,main="",xlab = "Samples", ylab = "%",las=2)
 
