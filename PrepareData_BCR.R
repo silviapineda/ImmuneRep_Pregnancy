@@ -18,20 +18,20 @@ print(x)
 setwd("/Users/Pinedasans/ImmuneRep_Pregnancy/")
 
 ##Read all the files and save into and Rdata all together
-files <- list.files("Data/BCR/")
+files <- list.files("Data/BCR_preT_and_cntrls//")
 
 data <- c()
 for(i in files) {
   cat(i, "\n")
-  t <- read.delim(paste("Data/BCR/", i, sep = ""))
+  t <- read.delim(paste("Data/BCR_preT_and_cntrls/", i, sep = ""))
   data <- rbind(data, t)
 }
-save(data, file="Data/BCR_data.RData")
+save(data, file="Data/BCR_PTB_Term_data.RData")
 
 ##############################
 ###Some Quality Control
 #############################
-load("Data/BCR/BCR_data.RData")
+load("Data/BCR_PTB_Term_data.RData")
 ##Discard all the V_score < 200
 data_qc<-data[which(data$v_score>=200),]
 ##Discard the non-functional sequences
@@ -46,6 +46,7 @@ data_qc$d_gene <- gsub("\\*", "", substr(data_qc$d_segment, 1, 8))
 data_qc$cdr3_seq <- gsub(" ","", data_qc$cdr3_seq_nt_q)
 ###Extract the isotype
 data_qc$isotype <- substr(data_qc$isosubtype, 1, 4)
+
 
 ##Count the somatic hypermutations
 data_qc$Vlength<-nchar(as.character(data_qc$v_sequence))
@@ -64,6 +65,7 @@ data_qc$read_length<-nchar(as.character(data_qc$trimmed_sequence))
 
 ###Delete the unmapped isotypes
 data_qc<-data_qc[which(data_qc$isotype!=""),]
+save(data_qc, file="Data/BCR_PTB_Term_data_qc.RData")
 
 ##Read counts and clones per sample and data point
 read_count <- table(data_qc$sample_label)
@@ -169,14 +171,18 @@ colnames(reads_clones_igh_SHM_cdr3length_naive_memory_cdr3length)[31:34]<-c("CDR
 summary_data<-data.frame(reads_clones_igh_SHM_cdr3length_naive_memory_cdr3length)
 
 ###Introduce a variable to design mother and fetal
-info_samples<-read.csv("Data/NormalSamplesScottBoydStanford9_13_18.csv")
+#info_samples<-read.csv("Data/NormalSamplesScottBoydStanford9_13_18.csv") ##First batch
+info_samples<-read.csv("Data/BCR_PTB_Term/BCR_PTB_Term.csv") ##Second batch
 id<-match(info_samples$Sample_ID,rownames(summary_data))
 summary_data$pairs[id]<-info_samples$Pairs
 summary_data$NumCells[id]<-info_samples$NumCells
+summary_data$Outcome[id]<-info_samples$X
 summary_data$sample<-gsub("\\*", "", substr(rownames(summary_data), 1, 1))
 summary_data$sample<-ifelse(summary_data$sample=="M","Maternal","Fetal")
 summary_data$sample<-factor(summary_data$sample)
 summary_data$sample<-relevel(summary_data$sample, ref = "Maternal")
+summary_data$Outcome<-factor(summary_data$Outcome)
+summary_data$Outcome<-relevel(summary_data$Outcome, ref = "Term")
 
 ## Diversity measures
 sample<-rownames(summary_data)
@@ -258,6 +264,6 @@ diversity<-cbind(entropy_IGHA,entropy_IGHD,entropy_IGHE,entropy_IGHG,entropy_IGH
 rownames(diversity)<-sample
 summary_data<-cbind(summary_data,diversity)
 
-save(data_qc,summary_data,file="Data/BCR_data_summary.RData")
+save(data_qc,summary_data,file="Data/BCR_PTB_Term_data_summary.RData")
 
 

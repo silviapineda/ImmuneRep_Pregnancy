@@ -31,7 +31,7 @@ load("Data/BCR_PTB_Term/BCR_PTB_Term_data_summary.RData")
 
 ###Function to plot summary plots with bar plots
 ####Summary plots
-cols=brewer.pal(3,name = "Accent")
+cols=brewer.pal(3,name = "Set2")
 
 ###Delete the twin for analysis
 summary_data<-summary_data[-c(39:41),]
@@ -43,33 +43,34 @@ markers<-c("clones_IGHA","clones_IGHD","clones_IGHE","clones_IGHG","clones_IGHM"
 
 p_PTB<-NULL
 p_Fetal<-NULL
+p_interaction<-NULL
 for (i in 1:length(markers)){
   print(i)
-  results<-coefficients(summary(glm(summary_data[,markers[i]] ~ summary_data$Outcome +summary_data$sample)))
+  results<-coefficients(summary(glm(summary_data[,markers[i]] ~ summary_data$Outcome*summary_data$sample)))
   p_PTB[i]<-results[2,4]
   p_Fetal[i]<-results[3,4]
+  p_interaction[i]<-results[4,4]
   summary_data$Marker<-summary_data[,markers[i]]
-  tiff(paste0("Results/boxplot_Term_PTB",i,".tiff"),res=300,w=1500,h=2000)
-  ggplot(summary_data) + geom_boxplot(aes(y = Marker, x = sample, fill = Outcome, color=Outcome),alpha = 0, position = position_dodge(width = .8)) +
-    geom_point(aes(y=Marker, color=Outcome,x=sample,fill=Outcome), position = position_jitterdodge(dodge.width = 0.8)) +     
-    scale_color_manual(values = c(cols[1], cols[2]), labels = c("Term", "PTB")) +
-    scale_y_continuous(name=markers[i]) + stat_compare_means(aes(x=sample, y=Marker, color=Outcome,fill=Outcome,label.x.npc = "center"))
-
-    
+  tiff(paste0("Results/boxplot_Term_PTB",markers[i],".tiff"),res=300,w=2000,h=2500)
+  # print(ggplot(summary_data) + geom_boxplot(aes(y = Marker, x = sample, fill = Outcome, color=Outcome),alpha = 0, position = position_dodge(width = .8)) +
+  #   geom_point(aes(y=Marker, color=Outcome,x=sample,fill=Outcome), position = position_jitterdodge(dodge.width = 0.8)) +     
+  #   scale_color_manual(values = c(cols[1], cols[2]), labels = c("Term", "PTB")) +
+  #   scale_y_continuous(name=markers[i]) + stat_compare_means(aes(x=sample, y=Marker, color=Outcome)))
+  # dev.off()
+  print(ggline(summary_data, x = "sample", y = "Marker", color = "Outcome",
+         add = c("mean_se", "jitter"),  palette = c("#66C2A5", "#FC8D62")) + scale_y_continuous(name=markers[i]) +
+          stat_compare_means(aes(group = sample), label = "p.signif"))
+  dev.off()
   
-  
-  #g<-ggpaired(summary_data, x = "Outcome", y = i,
-  #            color = "Outcome", line.color = "gray", line.size = 0.4,
-   #           palette = c("#BEAED4","#7FC97F"))+theme(text = element_text(size=15)) +
-   # labs(title=i,x="Outcome", y = "Number of clones") + theme(legend.position="none") +
-  #  stat_compare_means(method = "wilcox.test")
-  #print(g)
-  #dev.off()
-  j<-j+1
+  res.aov2 <- aov(Marker ~ sample + Outcome, data = summary_data)
+  res.aov3 <- aov(Marker ~ sample * Outcome, data = summary_data)
+  summary(res.aov3)
 }
-names(p_adj)<-c("clones_IGHA","clones_IGHD","clones_IGHE","clones_IGHG","clones_IGHM","clones_mutated_IGHM","clones_unmutated_IGHM",
-                "clones_mutated_IGHD","clones_unmutated_IGHD")
-write.csv(p_adj,"Results/Diversity/p_adj_clones.csv")
+
+
+names(p_PTB)<-markers
+names(p_Fetal)<-markers
+write.csv(p_PTB,p_Fetal,"Results/Diversity/p_term_ptb_clones.csv")
 
 plot(summary_data[,"clones_IGHM"], 
      summary_data[,"NumCells"],
