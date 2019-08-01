@@ -23,6 +23,11 @@ directory <- "Stanford_2/BCR/"
 plot_directory <- "Stanford_2/BCR/Results/V_gene_usage/"
 dir.create(plot_directory)
 
+##Extract genes from segments
+data_qc$v_gene <- gsub("\\*.*$", "", data_qc$v_segment)
+data_qc$j_gene <- gsub("\\*.*$", "", data_qc$j_segment)
+data_qc$d_gene <- gsub("\\*.*$", "", data_qc$d_segment)
+
 ##Isolate unique clones per isotype per sample to perform clone-level analysis
 data_qc<-data_qc[,c("sample_label", "isotype", "V_J_lenghCDR3_Clone_igh", "v_gene", "IGHM_mutated", "IGHD_mutated")]
 #rm(data_qc) #frees up memory just in case
@@ -199,7 +204,7 @@ for (isotype in isotypes){
     p <- pheatmap(v_gene_percents_combined, annotation_col = col_labels,
                   annotation_colors = ann_colors,
                   color = rev(colorRampPalette(rev(brewer.pal(n = 7, name = "YlOrRd")))(100)),
-                  main = paste("Heatmap of Genes/Samples - ", isotype, " ", mutate, sep = ""), fontsize = 8, fontsize_row = 6)
+                  main = paste("Heatmap of Genes/Samples - ", isotype, sep = ""), fontsize = 8, fontsize_row = 6)
     print(p)
     dev.off()
     
@@ -209,7 +214,7 @@ for (isotype in isotypes){
       p <- pheatmap(v_gene_percents_combined[sig_genes,], annotation_col = col_labels,
                     annotation_colors = ann_colors,
                     color = rev(colorRampPalette(rev(brewer.pal(n = 7, name = "YlOrRd")))(100)),
-                    main = paste0("Heatmap of Significant Genes - ", isotype, " ", mutate), fontsize = 8, fontsize_row = 6)
+                    main = paste0("Heatmap of Significant Genes - ", isotype), fontsize = 8, fontsize_row = 6)
       print(p)
       dev.off()
     }
@@ -344,7 +349,7 @@ for (isotype in isotypes){
     p <- pheatmap(v_gene_percents_combined, annotation_col = col_labels,
                   annotation_colors = ann_colors,
                   color = rev(colorRampPalette(rev(brewer.pal(n = 7, name = "YlOrRd")))(100)),
-                  main = paste("Heatmap of Genes/Samples - ", isotype, " ", mutate, sep = ""), fontsize = 8, fontsize_row = 6)
+                  main = paste("Heatmap of Genes/Samples - ", isotype), fontsize = 8, fontsize_row = 6)
     print(p)
     dev.off()
     
@@ -354,7 +359,7 @@ for (isotype in isotypes){
       p <- pheatmap(v_gene_percents_combined[sig_genes,], annotation_col = col_labels,
                     annotation_colors = ann_colors,
                     color = rev(colorRampPalette(rev(brewer.pal(n = 7, name = "YlOrRd")))(100)),
-                    main = paste0("Heatmap of Significant Genes - ", isotype, " ", mutate), fontsize = 8, fontsize_row = 6)
+                    main = paste0("Heatmap of Significant Genes - ", isotype), fontsize = 8, fontsize_row = 6)
       print(p)
       dev.off()
     }

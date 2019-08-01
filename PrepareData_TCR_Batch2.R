@@ -35,7 +35,7 @@ save(data, file=paste(directory, 'TCR_data.RData', sep = ""))
 #############################
 directory <- "Stanford_2/TCR/"
 
-load(paste(directory, 'TCR_data.RData', sep = ""))
+load('/Users/ble1/Box Sync/Fetal_Maternal_BCR_TCR_Sirota_Boyd_MacKenzie/TCR_preT_and_cntrls/TCR_data.RData')
 ##75% of v-scores are below 124, discarding all below 200 results in no leftover data
 ##Instead of filtering by v-score, filter by num_mismatches / length
 
