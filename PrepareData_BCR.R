@@ -15,18 +15,18 @@ print(x)
 ### Date: December, 2018
 ############################################################################################
 
-setwd("/Users/Pinedasans/ImmuneRep_Pregnancy/")
+#setwd("/Users/Pinedasans/ImmuneRep_Pregnancy/")
 
 ##Read all the files and save into and Rdata all together
-files <- list.files("Data/BCR_preT_and_cntrls//")
+files <- list.files("/Users/ble1/Box Sync/Fetal_Maternal_BCR_TCR_Sirota_Boyd_MacKenzie/BCR_preT_and_cntrls/")
 
 data <- c()
 for(i in files) {
   cat(i, "\n")
-  t <- read.delim(paste("Data/BCR_preT_and_cntrls/", i, sep = ""))
+  t <- read.delim(paste("/Users/ble1/Box Sync/Fetal_Maternal_BCR_TCR_Sirota_Boyd_MacKenzie/BCR_preT_and_cntrls/", i, sep = ""))
   data <- rbind(data, t)
 }
-save(data, file="Data/BCR_PTB_Term_data.RData")
+save(data, file="Stanford_2/BCR_PTB_Term_data.RData")
 
 ##############################
 ###Some Quality Control
@@ -38,9 +38,9 @@ data_qc<-data[which(data$v_score>=200),]
 data_qc<-data_qc[which(data_qc$productive=="t"),]
 
 ##Extract the gene from the segment with the allele
-data_qc$v_gene <- gsub("\\*", "", substr(data_qc$v_segment, 1, 8))
-data_qc$j_gene <- gsub("\\*", "", substr(data_qc$j_segment, 1, 5))
-data_qc$d_gene <- gsub("\\*", "", substr(data_qc$d_segment, 1, 8))
+data_qc$v_gene <- gsub("\\*.*$", "", data_qc$v_segment)
+data_qc$j_gene <- gsub("\\*.*$", "", data_qc$j_segment)
+data_qc$d_gene <- gsub("\\*.*$", "", data_qc$d_segment)
 
 ###Extract the CDR3 region
 data_qc$cdr3_seq <- gsub(" ","", data_qc$cdr3_seq_nt_q)
@@ -65,7 +65,7 @@ data_qc$read_length<-nchar(as.character(data_qc$trimmed_sequence))
 
 ###Delete the unmapped isotypes
 data_qc<-data_qc[which(data_qc$isotype!=""),]
-save(data_qc, file="Data/BCR_PTB_Term_data_qc.RData")
+#save(data_qc, file="Stanford_2/BCR_PTB_Term_data_qc.RData")
 
 ##Read counts and clones per sample and data point
 read_count <- table(data_qc$sample_label)
@@ -75,10 +75,25 @@ reads <- cbind(read_count,read_count_isotype)
 
 ##Count number of clones per sample 
 data_qc$V_J_lenghCDR3_Clone_igh = paste(data_qc$v_gene, data_qc$j_gene, nchar(data_qc$cdr3_seq),data_qc$igh_clone_id,sep="_")
-read_count_ighClones<- unique(data_qc[,c("sample_label","V_J_lenghCDR3_Clone_igh")])
+
+##Iterate through each sample individually for unique(), instead of all together
+samples <- unique(data_qc$sample_label)
+read_count_ighClones <- data.frame()
+read_count_ighClones_isotype <- data.frame()
+
+for (sample in samples){
+  print(sample)
+  data_qc_temp <- unique(data_qc[data_qc$sample_label == sample, c("sample_label", "V_J_lenghCDR3_Clone_igh")])
+  read_count_ighClones <- rbind(read_count_ighClones, data_qc_temp)
+  data_qc_temp <- unique(data_qc[data_qc$sample_label == sample, c("sample_label", "V_J_lenghCDR3_Clone_igh", "isotype")])
+  read_count_ighClones_isotype <- rbind(read_count_ighClones_isotype, data_qc_temp)
+}
+
+#read_count_ighClones<- unique(data_qc[,c("sample_label","V_J_lenghCDR3_Clone_igh")])
 clones_count<-data.matrix(table(read_count_ighClones$sample_label))
 colnames(clones_count)<-c("clones_count")
-read_count_ighClones_isotype<- unique(data_qc[,c("sample_label","V_J_lenghCDR3_Clone_igh","isotype")])
+
+#read_count_ighClones_isotype<- unique(data_qc[,c("sample_label","V_J_lenghCDR3_Clone_igh","isotype")])
 clones_igh<-data.matrix(table(read_count_ighClones_isotype$sample_label,read_count_ighClones_isotype$isotype))
 colnames(clones_igh)<-c("clones_IGHA","clones_IGHD","clones_IGHE","clones_IGHG","clones_IGHM")
 reads_clones_igh<-cbind(reads,clones_count,clones_igh)
@@ -138,11 +153,21 @@ read_count_mutated_IGHD <- data.matrix(table(data_qc$sample_label, data_qc$IGHD_
 colnames(read_count_mutated_IGHD) = c("mutated_IGHD","unmutaed_IGHD")
 reads_clones_igh_SHM_cdr3length_naive_memory<-cbind(reads_clones_igh_SHM_cdr3length,read_count_mutated_IGHM,read_count_mutated_IGHD)
 
-###Extract clones
-clones_mutated_IGHM<- unique(data_qc[,c("sample_label","V_J_lenghCDR3_Clone_igh","IGHM_mutated")])
+###Extract clones; iterate through samples individually to speed up processing
+clones_mutated_IGHM <- data.frame()
+clones_mutated_IGHD <- data.frame()
+for (sample in samples){
+  print(sample)
+  data_qc_temp <- unique(data_qc[data_qc$sample_label == sample, c("sample_label", "V_J_lenghCDR3_Clone_igh","IGHM_mutated")])
+  clones_mutated_IGHM <- rbind(clones_mutated_IGHM, data_qc_temp)
+  data_qc_temp <- unique(data_qc[data_qc$sample_label == sample, c("sample_label", "V_J_lenghCDR3_Clone_igh","IGHD_mutated")])
+  clones_mutated_IGHD <- rbind(clones_mutated_IGHD, data_qc_temp)
+}
+
+#clones_mutated_IGHM<- unique(data_qc[,c("sample_label","V_J_lenghCDR3_Clone_igh","IGHM_mutated")])
 clones_mutated_IGHM_matrix<-data.matrix(table(clones_mutated_IGHM$sample_label,clones_mutated_IGHM$IGHM_mutated))
 colnames(clones_mutated_IGHM_matrix)<-c("clones_mutated_IGHM","clones_unmutated_IGHM")
-clones_mutated_IGHD<- unique(data_qc[,c("sample_label","V_J_lenghCDR3_Clone_igh","IGHD_mutated")])
+#clones_mutated_IGHD<- unique(data_qc[,c("sample_label","V_J_lenghCDR3_Clone_igh","IGHD_mutated")])
 clones_mutated_IGHD_matrix<-data.matrix(table(clones_mutated_IGHD$sample_label,clones_mutated_IGHD$IGHD_mutated))
 colnames(clones_mutated_IGHD_matrix)<-c("clones_mutated_IGHD","clones_unmutated_IGHD")
 reads_clones_igh_SHM_cdr3length_naive_memory<-cbind(reads_clones_igh_SHM_cdr3length_naive_memory,
@@ -264,6 +289,6 @@ diversity<-cbind(entropy_IGHA,entropy_IGHD,entropy_IGHE,entropy_IGHG,entropy_IGH
 rownames(diversity)<-sample
 summary_data<-cbind(summary_data,diversity)
 
-save(data_qc,summary_data,file="Data/BCR_PTB_Term_data_summary.RData")
+save(data_qc,summary_data,file="Stanford_2/BCR_PTB_Term_data_summary.RData")
 
 
